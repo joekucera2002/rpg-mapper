@@ -14,6 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
+      "isTabletOnly": true,
       "bundleIdentifier": "com.joekucera2002.rpgmapper"
     },
     "android": {
@@ -30,3 +31,4 @@
     }
   }
 }
+
