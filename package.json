@@ -58,6 +58,11 @@
       "src/**/*.{ts,tsx}",
       "!src/**/*.d.ts"
     ],
+    "coverageReporters": [
+      "lcov",
+      "text",
+      "text-summary"
+    ],
     "coverageThreshold": {
       "global": {
         "branches": 70,
