@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="5" failures="0" errors="0" time="0.955">
+  <testsuite name="gameStore test cases" errors="0" failures="0" skipped="0" timestamp="2026-06-09T22:42:42" time="0.435" tests="1">
+    <testcase classname="gameStore test cases adds a game" name="gameStore test cases adds a game" time="0.004">
+    </testcase>
+  </testsuite>
+  <testsuite name="GameSelectScreen tests" errors="0" failures="0" skipped="0" timestamp="2026-06-09T22:42:42" time="0.643" tests="1">
+    <testcase classname="GameSelectScreen tests TopBar is rendered" name="GameSelectScreen tests TopBar is rendered" time="0.09">
+    </testcase>
+  </testsuite>
+  <testsuite name="TopBar component tests" errors="0" failures="0" skipped="0" timestamp="2026-06-09T22:42:42" time="0.648" tests="3">
+    <testcase classname="TopBar component tests renders the app name" name="TopBar component tests renders the app name" time="0.112">
+    </testcase>
+    <testcase classname="TopBar component tests displays the version number" name="TopBar component tests displays the version number" time="0.002">
+    </testcase>
+    <testcase classname="TopBar component tests renders the new game button" name="TopBar component tests renders the new game button" time="0.002">
+    </testcase>
+  </testsuite>
+</testsuites>
