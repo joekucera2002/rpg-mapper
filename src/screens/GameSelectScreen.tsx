@@ -2,7 +2,7 @@ import React from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet } from 'react-native';
 import { colors } from '../constants';
-import { TopBar } from '../components/TopBar';
+import { TopBar } from '../components/common/TopBar';
 
 export function GameSelectScreen() {
   return (

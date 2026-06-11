@@ -1,9 +1,10 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Constants from 'expo-constants';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { colors } from '../constants';
+import { colors } from '../../constants';
+import { TopBarProps } from './TopBar.types';
 
-export function TopBar() {
+export function TopBar({ onNewGame }: TopBarProps) {
   const version = Constants.expoConfig?.version ?? '0.0.0';
 
   return (
@@ -22,9 +23,10 @@ export function TopBar() {
 
       <TouchableOpacity
         style={styles.newButton}
-        testID="new-game-button"
+        testID="newgame-button"
         accessibilityLabel="New game"
         accessibilityRole="button"
+        onPress={onNewGame}
       >
         <Ionicons name="add-sharp" size={14} color={colors.white} />
       </TouchableOpacity>
