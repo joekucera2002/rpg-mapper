@@ -21,7 +21,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     requireFullScreen: true,
     bundleIdentifier: 'com.joekucera2002.rpgmapper',
     infoPlist: {
-      'UISupportedInterfaceOrientations-ipad': [
+      UISupportedInterfaceOrientations: [
+        'UIInterfaceOrientationLandscapeLeft',
+        'UIInterfaceOrientationLandscapeRight',
+      ],
+      'UISupportedInterfaceOrientations~ipad': [
         'UIInterfaceOrientationLandscapeLeft',
         'UIInterfaceOrientationLandscapeRight',
       ],

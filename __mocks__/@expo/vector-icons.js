@@ -1,3 +1,5 @@
+import { AntDesign } from '@expo/vector-icons';
+
 const React = require('react');
 const { View } = require('react-native');
 
@@ -8,4 +10,5 @@ module.exports = {
   Ionicons: MockIcon,
   FontAwesome: MockIcon,
   Feather: MockIcon,
+  AntDesign: MockIcon,
 };
