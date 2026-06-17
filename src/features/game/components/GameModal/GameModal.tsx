@@ -26,6 +26,12 @@ export function GameModal({ visible, onClose, onSave }: GameModalProps) {
 
   function handleNameChanged(value: string) {
     setName(value);
+    if (errors.name) {
+      setErrors((prev) => {
+        const { name: _, ...rest } = prev;
+        return rest;
+      });
+    }
   }
 
   function handleImageChanged(value: string | null) {

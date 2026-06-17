@@ -74,6 +74,42 @@ describe('GameModal tests', () => {
     });
   });
 
+  describe('when the name error is cleared', () => {
+    let triggerNameChange: (value: string) => void = () => {};
+
+    beforeEach(() => {
+      (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(({ onNameChanged }) => {
+        triggerNameChange = onNameChanged;
+        return null;
+      });
+
+      render(<GameModal {...defaultProps} visible={true} />);
+
+      // trigger validation failure
+      fireEvent.press(screen.getByTestId('confirm-button'));
+    });
+
+    it('sets the validation error', async () => {
+      await waitFor(() => {
+        expect(GeneralTabModule.GeneralTab).toHaveBeenLastCalledWith(
+          expect.objectContaining({ nameError: 'Name is required' }),
+          undefined,
+        );
+      });
+    });
+
+    it('clears the name error once name changes after a failed validation', async () => {
+      triggerNameChange('Test Game');
+
+      await waitFor(() => {
+        expect(GeneralTabModule.GeneralTab).toHaveBeenLastCalledWith(
+          expect.objectContaining({ nameError: undefined }),
+          undefined,
+        );
+      });
+    });
+  });
+
   describe('when cancelling the modal', () => {
     beforeEach(() => {
       render(<GameModal {...defaultProps} visible={true} />);
