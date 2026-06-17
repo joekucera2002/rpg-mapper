@@ -1,0 +1,185 @@
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { GameModalProps } from './GameModal.types';
+import { colors, GAME_COLORS } from '../../../../constants';
+import { TabBar } from '../../../../components/common/TabBar';
+import { Tab } from '../../../../components/common/TabBar.types';
+import { useState } from 'react';
+import { GeneralTab } from './GeneralTab';
+import { GeneralTabProps } from './GeneralTab.types';
+
+export function GameModal({ visible, onClose, onSave }: GameModalProps) {
+  const TABS: Tab[] = [{ key: 'general', label: 'General' }];
+
+  const [activeTab, setActiveTab] = useState<string>(TABS[0].key);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [name, setName] = useState<string>('');
+  const [image, setImage] = useState<string | null>(null);
+  const [color, setColor] = useState<string>(GAME_COLORS[0]);
+
+  function handleNameChanged(value: string) {
+    setName(value);
+  }
+
+  function handleImageChanged(value: string | null) {
+    setImage(value);
+  }
+
+  function handleColorChanged(value: string) {
+    setColor(value);
+  }
+
+  function handleOnTabChange(key: string) {
+    setActiveTab(key);
+  }
+
+  function validate(): boolean {
+    const newErrors: Record<string, string> = {};
+
+    if (!name.trim()) newErrors.name = 'Name is required';
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  }
+
+  function handleOnConfirm() {
+    if (!validate()) {
+      setActiveTab('general');
+      return;
+    }
+
+    onSave({
+      name: name,
+      color: color,
+      image: image,
+    });
+  }
+
+  const basicsTabProps: GeneralTabProps = {
+    name: name,
+    image: image,
+    color: color,
+    onNameChanged: handleNameChanged,
+    onImageChanged: handleImageChanged,
+    onColorChanged: handleColorChanged,
+    nameError: errors.name,
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      supportedOrientations={['landscape', 'landscape-left', 'landscape-right']}
+      testID="game-modal"
+    >
+      <Pressable style={styles.backdrop} onPress={onClose}>
+        <Pressable style={styles.modal}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>New Game</Text>
+          </View>
+
+          {/* Tabs */}
+          <TabBar tabs={TABS} activeTab={activeTab} onTabChange={handleOnTabChange} />
+
+          <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+            {activeTab === TABS[0].key && <GeneralTab {...basicsTabProps} />}
+          </ScrollView>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={onClose} testID="cancel-button">
+              <Text style={styles.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.confirmBtn}
+              onPress={handleOnConfirm}
+              testID="confirm-button"
+            >
+              <Text style={styles.confirmBtnText}>Create Game</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.72)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  body: {
+    flexShrink: 1,
+  },
+  bodyContent: {
+    padding: 18,
+    gap: 16,
+  },
+  cancelBtn: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border2,
+    alignItems: 'center',
+  },
+  cancelBtnText: {
+    fontSize: 13,
+    color: colors.text2,
+  },
+  confirmBtn: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+  },
+  confirmBtnText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#fff',
+  },
+  footer: {
+    flexDirection: 'row',
+    gap: 8,
+    padding: 12,
+    paddingHorizontal: 18,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  header: {
+    padding: 18,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  headerTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  modal: {
+    backgroundColor: colors.surface2,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border2,
+    width: '100%',
+    maxWidth: 440,
+    maxHeight: '85%',
+    overflow: 'hidden',
+  },
+});
