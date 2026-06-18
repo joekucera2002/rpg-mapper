@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { GameModal } from '../GameModal';
 import { GameModalProps } from '../GameModal.types';
 import * as GeneralTabModule from '../GeneralTab';
@@ -99,7 +99,9 @@ describe('GameModal tests', () => {
     });
 
     it('clears the name error once name changes after a failed validation', async () => {
-      triggerNameChange('Test Game');
+      act(() => {
+        triggerNameChange('Test Game');
+      });
 
       await waitFor(() => {
         expect(GeneralTabModule.GeneralTab).toHaveBeenLastCalledWith(
