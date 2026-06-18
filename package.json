@@ -10,6 +10,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
+    "lint:watch": "nodemon --watch src --ext ts,tsx --exec 'npm run lint'",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "format": "prettier --write src/**/*.{ts,tsx}",
     "test": "jest",
@@ -52,6 +53,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-native": "^5.0.0",
     "jest-junit": "^17.0.0",
+    "nodemon": "^3.1.14",
     "prettier": "^3.8.3",
     "typescript": "~5.9.2"
   },
