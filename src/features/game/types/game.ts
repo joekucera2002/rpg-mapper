@@ -3,8 +3,8 @@ export interface Game {
   name: string;
   color: string;
   image: string | null;
-  lastPlayed: number;
+  lastUpdated: number;
   createdAt: number;
 }
 
-export type GameData = Omit<Game, 'id' | 'lastPlayed' | 'createdAt'>;
+export type GameData = Omit<Game, 'id' | 'lastUpdated' | 'createdAt'>;

@@ -4,6 +4,7 @@
     "strict": true,
     "jsx": "react-native",
     "types": ["jest"],
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "experimentalDecorators": true
   }
 }
