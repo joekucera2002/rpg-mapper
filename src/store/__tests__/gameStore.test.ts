@@ -83,7 +83,8 @@ describe('gameStore tests', () => {
       it('inserts the createdAt in the record', () => {
         const { games } = useGameStore.getState();
 
-        expect(games[0].createdAt).toBeCloseTo(Date.now());
+        expect(games[0].createdAt).toBeGreaterThanOrEqual(Date.now() - 1000);
+        expect(games[0].createdAt).toBeLessThanOrEqual(Date.now());
       });
 
       it('inserts the lastUpdated in the record', () => {
