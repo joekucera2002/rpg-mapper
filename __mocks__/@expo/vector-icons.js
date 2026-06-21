@@ -9,6 +9,7 @@ module.exports = {
   MaterialIcons: MockIcon,
   Ionicons: MockIcon,
   FontAwesome: MockIcon,
+  FontAwesome5: MockIcon,
   Feather: MockIcon,
   AntDesign: MockIcon,
 };

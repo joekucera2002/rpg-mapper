@@ -93,7 +93,6 @@
       }
     },
     "testMatch": [
-      "**/src/**/__tests__/**/*.{ts,tsx}",
       "**/src/**/*.test.{ts,tsx}"
     ]
   },
