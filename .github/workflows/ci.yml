@@ -50,6 +50,8 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./test-results/junit.xml
+          report_type: test_results
+          fail_ci_if_error: false
 
       - name: Upload coverage report as artifact
         if: always()
