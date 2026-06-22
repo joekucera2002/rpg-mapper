@@ -3,7 +3,7 @@ import { Game, GameData } from '../features/game/types/game';
 import { GameModel } from '../data/models/GameModel';
 import { database } from '../data/database';
 
-interface GameStore {
+export interface GameStore {
   games: Game[];
   loadGames: () => Promise<void>;
   addGame: (data: GameData) => Promise<void>;
