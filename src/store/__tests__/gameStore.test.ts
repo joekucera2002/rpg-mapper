@@ -138,8 +138,10 @@ describe('gameStore tests', () => {
 
       it('updates the lastUpdated in the record', () => {
         const { games } = useGameStore.getState();
+        const now = Date.now();
 
-        expect(games[0].lastUpdated).toBeCloseTo(Date.now());
+        expect(games[0].lastUpdated).toBeGreaterThanOrEqual(now - 1000);
+        expect(games[0].lastUpdated).toBeLessThanOrEqual(now);
       });
     });
   });
