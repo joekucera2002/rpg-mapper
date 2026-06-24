@@ -7,6 +7,7 @@ export interface GameStore {
   games: Game[];
   loadGames: () => Promise<void>;
   addGame: (data: GameData) => Promise<void>;
+  updateGame: (id: string, data: GameData) => Promise<void>;
 }
 
 function toGame(model: GameModel): Game {
@@ -42,6 +43,23 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         game.image = data.image;
         game.lastUpdated = now;
         game.createdAt = now;
+      });
+    });
+
+    await get().loadGames();
+  },
+
+  updateGame: async (id, data) => {
+    const collection = database.get<GameModel>('games');
+    const model = await collection.find(id);
+    const now = Date.now();
+
+    await database.write(async () => {
+      await model.update((game) => {
+        if (data.name !== undefined) game.name = data.name;
+        if (data.color !== undefined) game.color = data.color;
+        if (data.image !== undefined) game.image = data.image;
+        game.lastUpdated = now;
       });
     });
 

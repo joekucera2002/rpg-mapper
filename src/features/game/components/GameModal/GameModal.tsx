@@ -15,14 +15,15 @@ import { useState } from 'react';
 import { GeneralTab } from './GeneralTab';
 import { GeneralTabProps } from './GeneralTab.types';
 
-export function GameModal({ visible, onClose, onSave }: GameModalProps) {
+export function GameModal({ game, visible, onCancel, onSave }: GameModalProps) {
   const TABS: Tab[] = [{ key: 'general', label: 'General' }];
+  const isEditMode = !!game;
 
   const [activeTab, setActiveTab] = useState<string>(TABS[0].key);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [name, setName] = useState<string>('');
-  const [image, setImage] = useState<string | null>(null);
-  const [color, setColor] = useState<string>(GAME_COLORS[0]);
+  const [name, setName] = useState<string>(game?.name ?? '');
+  const [image, setImage] = useState<string | null>(game?.image ?? null);
+  const [color, setColor] = useState<string>(game?.color ?? GAME_COLORS[0]);
 
   function handleNameChanged(value: string) {
     setName(value);
@@ -87,11 +88,13 @@ export function GameModal({ visible, onClose, onSave }: GameModalProps) {
       supportedOrientations={['landscape', 'landscape-left', 'landscape-right']}
       testID="game-modal"
     >
-      <Pressable style={styles.backdrop} onPress={onClose}>
+      <Pressable style={styles.backdrop} onPress={onCancel}>
         <Pressable style={styles.modal}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>New Game</Text>
+            <Text style={styles.headerTitle} testID="title-text">
+              {isEditMode ? 'Edit Game' : 'New Game'}
+            </Text>
           </View>
 
           {/* Tabs */}
@@ -103,7 +106,7 @@ export function GameModal({ visible, onClose, onSave }: GameModalProps) {
 
           {/* Footer */}
           <View style={styles.footer}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose} testID="cancel-button">
+            <TouchableOpacity style={styles.cancelBtn} onPress={onCancel} testID="cancel-button">
               <Text style={styles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -111,7 +114,9 @@ export function GameModal({ visible, onClose, onSave }: GameModalProps) {
               onPress={handleOnConfirm}
               testID="confirm-button"
             >
-              <Text style={styles.confirmBtnText}>Create Game</Text>
+              <Text style={styles.confirmBtnText} testID="confirmbutton-text">
+                {isEditMode ? 'Save Changes' : 'Create Game'}
+              </Text>
             </TouchableOpacity>
           </View>
         </Pressable>

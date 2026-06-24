@@ -7,10 +7,12 @@ import { GameSelectGrid } from '../features/game/components/GameSelectGrid/GameS
 import { useGameStore } from '../store/gameStore';
 import { GameModal } from '../features/game/components/GameModal/GameModal';
 import { Game, GameData } from '../features/game/types/game';
+import { GameModalProps } from '../features/game/components/GameModal/GameModal.types';
 
 export function GameSelectScreen() {
-  const { games, addGame, loadGames } = useGameStore();
-  const [modalVisible, setModalVisible] = useState(false);
+  const { games, addGame, loadGames, updateGame } = useGameStore();
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [gameInEdit, setGameInEdit] = useState<Game | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -20,30 +22,43 @@ export function GameSelectScreen() {
     void load();
   }, [loadGames]);
 
-  function handleClose() {
-    setModalVisible(false);
+  function handleOnCancel() {
+    setIsModalVisible(false);
   }
 
-  function handleNewGame() {
-    setModalVisible(true);
+  function handleOnNewGame() {
+    setGameInEdit(null);
+    setIsModalVisible(true);
   }
 
-  function handleEditGame(item: Game) {
-    console.log(item);
+  function handleOnEditGame(item: Game) {
+    setGameInEdit(item);
+    setIsModalVisible(true);
   }
 
   async function handleOnSave(data: GameData) {
-    await addGame(data);
+    if (gameInEdit) {
+      await updateGame(gameInEdit.id, data);
+    } else {
+      await addGame(data);
+    }
 
-    setModalVisible(false);
+    setIsModalVisible(false);
   }
+
+  const modalProps: GameModalProps = {
+    game: gameInEdit,
+    visible: isModalVisible,
+    onCancel: handleOnCancel,
+    onSave: handleOnSave,
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <TopBar onNewGame={handleNewGame} />
-      <GameSelectGrid games={games} onEditGame={handleEditGame} />
+      <TopBar onNewGame={handleOnNewGame} />
+      <GameSelectGrid games={games} onEditGame={handleOnEditGame} />
 
-      <GameModal visible={modalVisible} onClose={handleClose} onSave={handleOnSave} />
+      <GameModal {...modalProps} key={gameInEdit?.id ?? 'closed'} />
     </SafeAreaView>
   );
 }

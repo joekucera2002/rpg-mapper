@@ -1,5 +1,6 @@
 import { useGameStore } from '../gameStore';
 import { database } from '../../data/database';
+import { GameData } from '../../features/game/types/game';
 
 jest.mock('../../data/database', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -91,6 +92,54 @@ describe('gameStore tests', () => {
         const { games } = useGameStore.getState();
 
         expect(games[0].lastUpdated).toBe(games[0].createdAt);
+      });
+    });
+  });
+
+  describe('updateGames', () => {
+    const data: GameData = {
+      name: 'Game 1 Change',
+      color: 'Color 1 Change',
+      image: 'Image 1 Change',
+    };
+
+    beforeEach(async () => {
+      const { addGame, loadGames } = useGameStore.getState();
+
+      await addGame({ name: 'Game 1', color: 'Color 1', image: 'Image 1' });
+      await loadGames();
+    });
+
+    describe('when updating a game', () => {
+      beforeEach(async () => {
+        const { games, loadGames, updateGame } = useGameStore.getState();
+
+        await updateGame(games[0].id, data);
+        await loadGames();
+      });
+
+      it('updates the name in the record', () => {
+        const { games } = useGameStore.getState();
+
+        expect(games[0].name).toBe(data.name);
+      });
+
+      it('updates the color in the record', () => {
+        const { games } = useGameStore.getState();
+
+        expect(games[0].color).toBe(data.color);
+      });
+
+      it('updates the image in the record', () => {
+        const { games } = useGameStore.getState();
+
+        expect(games[0].image).toBe(data.image);
+      });
+
+      it('updates the lastUpdated in the record', () => {
+        const { games } = useGameStore.getState();
+
+        expect(games[0].lastUpdated).toBeCloseTo(Date.now());
       });
     });
   });

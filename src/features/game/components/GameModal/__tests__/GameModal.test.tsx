@@ -4,13 +4,15 @@ import { GameModalProps } from '../GameModal.types';
 import * as GeneralTabModule from '../GeneralTab';
 import React from 'react';
 import { GAME_COLORS } from '../../../../../constants';
+import { Game } from '../../../types/game';
 
 jest.spyOn(GeneralTabModule, 'GeneralTab');
 
 describe('GameModal tests', () => {
   const defaultProps: GameModalProps = {
+    game: null,
     visible: false,
-    onClose: jest.fn(),
+    onCancel: jest.fn(),
     onSave: jest.fn(),
   };
 
@@ -27,9 +29,21 @@ describe('GameModal tests', () => {
       expect(screen.queryByTestId('game-modal')).toBeNull();
     });
 
-    describe('BasicsTab wiring', () => {
+    describe('when game is null (adding game)', () => {
       beforeEach(() => {
         render(<GameModal {...defaultProps} visible={true} />);
+      });
+
+      it('sets the modal title', () => {
+        const title = screen.getByTestId('title-text');
+
+        expect(title.props.children).toBe('New Game');
+      });
+
+      it('sets the confirm button text', () => {
+        const title = screen.getByTestId('confirmbutton-text');
+
+        expect(title.props.children).toBe('Create Game');
       });
 
       it('passed the name props', () => {
@@ -56,6 +70,63 @@ describe('GameModal tests', () => {
         expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
           expect.objectContaining({
             color: GAME_COLORS[0],
+            onColorChanged: expect.any(Function),
+          }),
+          undefined,
+        );
+      });
+    });
+
+    describe('when game is not null (editing game)', () => {
+      const game: Game = {
+        id: 'TestGame1',
+        name: 'Test Game 1',
+        color: GAME_COLORS[5],
+        image: 'Test Image 1',
+        createdAt: Date.now() - 1000,
+        lastUpdated: Date.now() - 150,
+      };
+
+      beforeEach(() => {
+        render(<GameModal {...defaultProps} visible={true} game={game} />);
+      });
+
+      it('sets the modal title', () => {
+        const title = screen.getByTestId('title-text');
+
+        expect(title.props.children).toBe('Edit Game');
+      });
+
+      it('sets the confirm button text', () => {
+        const title = screen.getByTestId('confirmbutton-text');
+
+        expect(title.props.children).toBe('Save Changes');
+      });
+
+      it('passed the name props', () => {
+        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+          expect.objectContaining({
+            name: game.name,
+            onNameChanged: expect.any(Function),
+          }),
+          undefined,
+        );
+      });
+
+      it('passed the image props', () => {
+        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+          expect.objectContaining({
+            image: game.image,
+            onImageChanged: expect.any(Function),
+          }),
+          undefined,
+        );
+      });
+
+      it('passed the color props', () => {
+        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+          expect.objectContaining({
+            color: game.color,
             onColorChanged: expect.any(Function),
           }),
           undefined,
@@ -119,9 +190,9 @@ describe('GameModal tests', () => {
       fireEvent.press(screen.getByTestId('cancel-button'));
     });
 
-    it('calls onClose', async () => {
+    it('calls onCancel', async () => {
       await waitFor(() => {
-        expect(defaultProps.onClose).toHaveBeenCalled();
+        expect(defaultProps.onCancel).toHaveBeenCalled();
       });
     });
   });
