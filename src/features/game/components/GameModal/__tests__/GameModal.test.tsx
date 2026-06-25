@@ -5,6 +5,7 @@ import * as GeneralTabModule from '../GeneralTab';
 import React from 'react';
 import { GAME_COLORS } from '../../../../../constants';
 import { Game } from '../../../types/game';
+import { View } from 'react-native';
 
 jest.spyOn(GeneralTabModule, 'GeneralTab');
 
@@ -189,6 +190,69 @@ describe('GameModal tests', () => {
 
     it('should be shown', () => {
       expect(screen.getByTestId('game-modal')).toBeTruthy();
+    });
+  });
+
+  describe('when editing the basics tab', () => {
+    describe('when updating the name', () => {
+      beforeEach(async () => {
+        (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(({ onNameChanged, name }) => {
+          React.useEffect(() => {
+            onNameChanged('Test Name');
+          }, [onNameChanged]);
+          return <View testID="general-tab" accessibilityLabel={name ?? 'null'} />;
+        });
+
+        render(<GameModal {...defaultProps} visible={true} />);
+
+        await act(async () => {});
+      });
+
+      it('updates the name in state', () => {
+        expect(screen.getByTestId('general-tab').props.accessibilityLabel).toBe('Test Name');
+      });
+    });
+
+    describe('when updating the image', () => {
+      beforeEach(async () => {
+        (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(
+          ({ onImageChanged, image }) => {
+            React.useEffect(() => {
+              onImageChanged('file://test.jpg');
+            }, [onImageChanged]);
+            return <View testID="general-tab" accessibilityLabel={image ?? 'null'} />;
+          },
+        );
+
+        render(<GameModal {...defaultProps} visible={true} />);
+
+        await act(async () => {});
+      });
+
+      it('updates the image in state', () => {
+        expect(screen.getByTestId('general-tab').props.accessibilityLabel).toBe('file://test.jpg');
+      });
+    });
+
+    describe('when updating the color', () => {
+      beforeEach(async () => {
+        (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(
+          ({ onColorChanged, color }) => {
+            React.useEffect(() => {
+              onColorChanged(GAME_COLORS[2]);
+            }, [onColorChanged]);
+            return <View testID="general-tab" accessibilityLabel={color ?? 'null'} />;
+          },
+        );
+
+        render(<GameModal {...defaultProps} visible={true} />);
+
+        await act(async () => {});
+      });
+
+      it('updates the color in state', () => {
+        expect(screen.getByTestId('general-tab').props.accessibilityLabel).toBe(GAME_COLORS[2]);
+      });
     });
   });
 
