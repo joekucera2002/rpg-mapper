@@ -210,6 +210,20 @@ describe('GameModal tests', () => {
   });
 
   describe('when editing the basics tab', () => {
+    describe('when setting the active tab', () => {
+      beforeEach(() => {
+        render(<GameModal {...defaultProps} visible={true} />);
+
+        act(() => {
+          capturedOnTabChange('general');
+        });
+      });
+
+      it('should select the General Tab', () => {
+        expect(screen.getByTestId('tab-bar').props.accessibilityLabel).toBe('general');
+      });
+    });
+
     describe('when updating the name', () => {
       beforeEach(async () => {
         (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(({ onNameChanged, name }) => {
@@ -315,6 +329,32 @@ describe('GameModal tests', () => {
       it('does not call onSave', async () => {
         await waitFor(() => {
           expect(defaultProps.onSave).not.toHaveBeenCalled();
+        });
+      });
+
+      describe('when updating the name field', () => {
+        beforeEach(async () => {
+          (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(
+            ({ onNameChanged, name }) => {
+              React.useEffect(() => {
+                onNameChanged('Test Name');
+              }, [onNameChanged]);
+              return <View testID="general-tab" accessibilityLabel={name ?? 'null'} />;
+            },
+          );
+
+          render(<GameModal {...defaultProps} visible={true} />);
+
+          await act(async () => {});
+        });
+
+        it('clears the name error', async () => {
+          await waitFor(() => {
+            expect(GeneralTabModule.GeneralTab).toHaveBeenLastCalledWith(
+              expect.objectContaining({ nameError: undefined }),
+              undefined,
+            );
+          });
         });
       });
     });
