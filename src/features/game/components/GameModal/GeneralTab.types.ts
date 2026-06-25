@@ -5,5 +5,7 @@ export type GeneralTabProps = {
   onNameChanged: (value: string) => void;
   onImageChanged: (value: string | null) => void;
   onColorChanged: (value: string) => void;
+  onDeleteGame: () => void;
   nameError?: string;
+  isEditMode: boolean;
 };

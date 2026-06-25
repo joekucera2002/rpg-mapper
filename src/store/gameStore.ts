@@ -8,6 +8,7 @@ export interface GameStore {
   loadGames: () => Promise<void>;
   addGame: (data: GameData) => Promise<void>;
   updateGame: (id: string, data: GameData) => Promise<void>;
+  deleteGame: (id: string) => Promise<void>;
 }
 
 function toGame(model: GameModel): Game {
@@ -61,6 +62,17 @@ export const useGameStore = create<GameStore>()((set, get) => ({
         if (data.image !== undefined) game.image = data.image;
         game.lastUpdated = now;
       });
+    });
+
+    await get().loadGames();
+  },
+
+  deleteGame: async (id) => {
+    const collection = database.get<GameModel>('games');
+    const model = await collection.find(id);
+
+    await database.write(async () => {
+      await model.markAsDeleted();
     });
 
     await get().loadGames();

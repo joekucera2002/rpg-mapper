@@ -5,4 +5,5 @@ export type GameModalProps = {
   visible: boolean;
   onCancel: () => void;
   onSave: (data: GameData) => void;
+  onDelete: () => void;
 };

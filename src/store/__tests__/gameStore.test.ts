@@ -48,7 +48,7 @@ describe('gameStore tests', () => {
     });
   });
 
-  describe('addGames', () => {
+  describe('addGame', () => {
     describe('when adding a game', () => {
       beforeEach(async () => {
         const { addGame, loadGames } = useGameStore.getState();
@@ -96,7 +96,7 @@ describe('gameStore tests', () => {
     });
   });
 
-  describe('updateGames', () => {
+  describe('updateGame', () => {
     const data: GameData = {
       name: 'Game 1 Change',
       color: 'Color 1 Change',
@@ -142,6 +142,30 @@ describe('gameStore tests', () => {
 
         expect(games[0].lastUpdated).toBeGreaterThanOrEqual(now - 1000);
         expect(games[0].lastUpdated).toBeLessThanOrEqual(now);
+      });
+    });
+  });
+
+  describe('deleteGame', () => {
+    beforeEach(async () => {
+      const { addGame, loadGames } = useGameStore.getState();
+
+      await addGame({ name: 'Game 1', color: 'Color 1', image: 'Image 1' });
+      await loadGames();
+    });
+
+    describe('when deleting a game', () => {
+      beforeEach(async () => {
+        const { deleteGame, loadGames, games } = useGameStore.getState();
+
+        await deleteGame(games[0].id);
+        await loadGames();
+      });
+
+      it('deletes the game', () => {
+        const { games } = useGameStore.getState();
+
+        expect(games.length).toBe(0);
       });
     });
   });

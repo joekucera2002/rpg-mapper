@@ -9,15 +9,23 @@ import { Game } from '../../../types/game';
 jest.spyOn(GeneralTabModule, 'GeneralTab');
 
 describe('GameModal tests', () => {
+  let capturedOnDeleteGame: () => void;
+
   const defaultProps: GameModalProps = {
     game: null,
     visible: false,
     onCancel: jest.fn(),
     onSave: jest.fn(),
+    onDelete: jest.fn(),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(({ onDeleteGame }) => {
+      capturedOnDeleteGame = onDeleteGame;
+      return null;
+    });
   });
 
   describe('initial state', () => {
@@ -71,6 +79,15 @@ describe('GameModal tests', () => {
           expect.objectContaining({
             color: GAME_COLORS[0],
             onColorChanged: expect.any(Function),
+          }),
+          undefined,
+        );
+      });
+
+      it('passed the isEditMode prop', () => {
+        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isEditMode: false,
           }),
           undefined,
         );
@@ -131,6 +148,36 @@ describe('GameModal tests', () => {
           }),
           undefined,
         );
+      });
+
+      it('passed the isEditMode prop', () => {
+        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+          expect.objectContaining({
+            isEditMode: true,
+          }),
+          undefined,
+        );
+      });
+
+      it('passed the onDeleteGame prop', () => {
+        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+          expect.objectContaining({
+            onDeleteGame: expect.any(Function),
+          }),
+          undefined,
+        );
+      });
+
+      describe('when deleting the game', () => {
+        beforeEach(() => {
+          act(() => {
+            capturedOnDeleteGame();
+          });
+        });
+
+        it('calls onDelete', () => {
+          expect(defaultProps.onDelete).toHaveBeenCalled();
+        });
       });
     });
   });

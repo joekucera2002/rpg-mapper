@@ -21,11 +21,13 @@ jest.spyOn(GameSelectGridModule, 'GameSelectGrid');
 
 const addGameMock = jest.fn();
 const updateGameMock = jest.fn();
+const deleteGameMock = jest.fn();
 
 describe('GameSelectScreen tests', () => {
   let capturedOnCancel: () => void;
   let capturedOnSave: (data: GameData) => void;
   let capturedOnEditGame: (game: Game) => void;
+  let capturedOnDelete: (id: string) => void;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -34,14 +36,18 @@ describe('GameSelectScreen tests', () => {
       games: [],
       addGame: addGameMock,
       updateGame: updateGameMock,
+      deleteGame: deleteGameMock,
       loadGames: jest.fn(),
     } as unknown as GameStore);
 
-    (GameModalModule.GameModal as jest.Mock).mockImplementation(({ onCancel, onSave, visible }) => {
-      capturedOnCancel = onCancel;
-      capturedOnSave = onSave;
-      return visible ? <View testID="game-modal" /> : null;
-    });
+    (GameModalModule.GameModal as jest.Mock).mockImplementation(
+      ({ onCancel, onSave, onDelete, visible }) => {
+        capturedOnCancel = onCancel;
+        capturedOnSave = onSave;
+        capturedOnDelete = onDelete;
+        return visible ? <View testID="game-modal" /> : null;
+      },
+    );
 
     (GameSelectGridModule.GameSelectGrid as jest.Mock).mockImplementation(({ onEditGame }) => {
       capturedOnEditGame = onEditGame;
@@ -191,6 +197,18 @@ describe('GameSelectScreen tests', () => {
           expect.objectContaining({ visible: false }),
           undefined,
         );
+      });
+    });
+
+    describe('when the game is deleted', () => {
+      beforeEach(async () => {
+        await act(async () => {
+          capturedOnDelete('Game1');
+        });
+      });
+
+      it('calls deleteGame', () => {
+        expect(deleteGameMock).toHaveBeenCalledWith(game.id);
       });
     });
   });

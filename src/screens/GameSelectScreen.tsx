@@ -10,7 +10,7 @@ import { Game, GameData } from '../features/game/types/game';
 import { GameModalProps } from '../features/game/components/GameModal/GameModal.types';
 
 export function GameSelectScreen() {
-  const { games, addGame, loadGames, updateGame } = useGameStore();
+  const { games, addGame, loadGames, updateGame, deleteGame } = useGameStore();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [gameInEdit, setGameInEdit] = useState<Game | null>(null);
 
@@ -46,11 +46,18 @@ export function GameSelectScreen() {
     setIsModalVisible(false);
   }
 
+  async function handleOnDelete() {
+    if (gameInEdit) await deleteGame(gameInEdit.id);
+
+    setIsModalVisible(false);
+  }
+
   const modalProps: GameModalProps = {
     game: gameInEdit,
     visible: isModalVisible,
     onCancel: handleOnCancel,
     onSave: handleOnSave,
+    onDelete: handleOnDelete,
   };
 
   return (

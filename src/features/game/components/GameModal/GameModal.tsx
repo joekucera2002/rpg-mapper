@@ -15,7 +15,7 @@ import { useState } from 'react';
 import { GeneralTab } from './GeneralTab';
 import { GeneralTabProps } from './GeneralTab.types';
 
-export function GameModal({ game, visible, onCancel, onSave }: GameModalProps) {
+export function GameModal({ game, visible, onCancel, onSave, onDelete }: GameModalProps) {
   const TABS: Tab[] = [{ key: 'general', label: 'General' }];
   const isEditMode = !!game;
 
@@ -77,7 +77,9 @@ export function GameModal({ game, visible, onCancel, onSave }: GameModalProps) {
     onNameChanged: handleNameChanged,
     onImageChanged: handleImageChanged,
     onColorChanged: handleColorChanged,
+    onDeleteGame: onDelete,
     nameError: errors.name,
+    isEditMode: isEditMode,
   };
 
   return (

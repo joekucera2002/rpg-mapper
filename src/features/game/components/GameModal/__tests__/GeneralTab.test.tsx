@@ -3,8 +3,10 @@ import { GeneralTabProps } from '../GeneralTab.types';
 import { GeneralTab } from '../GeneralTab';
 import * as ImageUploadModule from '../../../../../components/common/ImageUpload';
 import { GAME_COLORS } from '../../../../../constants';
+import { Alert, AlertButton } from 'react-native';
 
 jest.spyOn(ImageUploadModule, 'ImageUpload');
+jest.spyOn(Alert, 'alert');
 
 const defaultProps: GeneralTabProps = {
   name: 'Test Game',
@@ -13,7 +15,9 @@ const defaultProps: GeneralTabProps = {
   onNameChanged: jest.fn(),
   onImageChanged: jest.fn(),
   onColorChanged: jest.fn(),
+  onDeleteGame: jest.fn(),
   nameError: undefined,
+  isEditMode: false,
 };
 
 beforeEach(() => {
@@ -38,6 +42,10 @@ describe('GeneralTab tests', () => {
 
     it('does not display the name error', () => {
       expect(screen.queryByTestId('nameerror-text')).toBeNull();
+    });
+
+    it('does not display delete game button', () => {
+      expect(screen.queryByTestId('deletegame-button')).toBeNull();
     });
 
     describe('ImageUpload wiring', () => {
@@ -88,6 +96,45 @@ describe('GeneralTab tests', () => {
     it('calls onColorChanged', async () => {
       await waitFor(() => {
         expect(defaultProps.onColorChanged).toHaveBeenCalledWith(GAME_COLORS[2]);
+      });
+    });
+  });
+
+  describe('when editing a game', () => {
+    beforeEach(() => {
+      render(<GeneralTab {...defaultProps} isEditMode={true} />);
+    });
+
+    it('does display delete game button', () => {
+      expect(screen.getByTestId('deletegame-button')).toBeTruthy();
+    });
+
+    describe('when deleting a game', () => {
+      beforeEach(() => {
+        fireEvent.press(screen.getByTestId('deletegame-button'));
+      });
+
+      it('shows the confirmation dialog', () => {
+        expect(Alert.alert).toHaveBeenCalledWith(
+          expect.stringContaining(`Delete "Test Game"?`),
+          expect.any(String),
+          expect.any(Array),
+        );
+      });
+
+      describe('when delete is confirmed', () => {
+        beforeEach(() => {
+          const alertButtons = (Alert.alert as jest.Mock).mock.calls[0][2];
+          const deleteButton = alertButtons.find((btn: AlertButton) => btn.style == 'destructive');
+
+          deleteButton.onPress();
+        });
+
+        it('calls onDeleteGame', async () => {
+          await waitFor(() => {
+            expect(defaultProps.onDeleteGame).toHaveBeenCalled();
+          });
+        });
       });
     });
   });

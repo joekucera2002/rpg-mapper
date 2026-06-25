@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { colors, GAME_COLORS } from '../../../../constants';
 import { GeneralTabProps } from './GeneralTab.types';
 import { ImageUpload } from '../../../../components/common/ImageUpload';
@@ -11,8 +11,21 @@ export function GeneralTab({
   onNameChanged,
   onImageChanged,
   onColorChanged,
+  onDeleteGame,
   nameError,
+  isEditMode,
 }: GeneralTabProps) {
+  function handleDelete() {
+    Alert.alert(
+      `Delete "${name}"?`,
+      'All game data will be permanently deleted. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: onDeleteGame },
+      ],
+    );
+  }
+
   return (
     <>
       <View style={styles.field}>
@@ -62,11 +75,40 @@ export function GeneralTab({
           ))}
         </View>
       </View>
+
+      {isEditMode && (
+        <View style={styles.deleteZone}>
+          <TouchableOpacity
+            style={styles.deleteBtn}
+            onPress={handleDelete}
+            testID="deletegame-button"
+          >
+            <Text style={styles.deleteBtnText}>Delete Game</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  deleteBtn: {
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2a1414',
+    alignItems: 'center',
+  },
+  deleteBtnText: {
+    fontSize: 13,
+    color: '#955',
+  },
+  deleteZone: {
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    marginTop: 4,
+  },
   errorText: {
     fontSize: 11,
     color: colors.red,
