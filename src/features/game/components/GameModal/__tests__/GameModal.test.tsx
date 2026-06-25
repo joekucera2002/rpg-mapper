@@ -334,6 +334,15 @@ describe('GameModal tests', () => {
 
       describe('when updating the name field', () => {
         beforeEach(async () => {
+          fireEvent.press(screen.getByTestId('confirm-button'));
+
+          await waitFor(() => {
+            expect(GeneralTabModule.GeneralTab).toHaveBeenLastCalledWith(
+              expect.objectContaining({ nameError: 'Name is required' }),
+              undefined,
+            );
+          });
+
           (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(
             ({ onNameChanged, name }) => {
               React.useEffect(() => {
@@ -344,7 +353,6 @@ describe('GameModal tests', () => {
           );
 
           render(<GameModal {...defaultProps} visible={true} />);
-
           await act(async () => {});
         });
 
