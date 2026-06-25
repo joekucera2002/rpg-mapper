@@ -333,9 +333,24 @@ describe('GameModal tests', () => {
       });
 
       describe('when updating the name field', () => {
+        let triggerNameChange: (value: string) => void = () => {};
+
         beforeEach(async () => {
+          // capture onNameChanged from the existing render
+          (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(
+            ({ onNameChanged, name }) => {
+              triggerNameChange = onNameChanged;
+              return <View testID="general-tab" accessibilityLabel={name ?? 'null'} />;
+            },
+          );
+
+          // re-render to pick up the new mock
+          render(<GameModal {...defaultProps} visible={true} />);
+
+          // trigger validation failure to set errors.name
           fireEvent.press(screen.getByTestId('confirm-button'));
 
+          // wait for error to be set
           await waitFor(() => {
             expect(GeneralTabModule.GeneralTab).toHaveBeenLastCalledWith(
               expect.objectContaining({ nameError: 'Name is required' }),
@@ -343,17 +358,10 @@ describe('GameModal tests', () => {
             );
           });
 
-          (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(
-            ({ onNameChanged, name }) => {
-              React.useEffect(() => {
-                onNameChanged('Test Name');
-              }, [onNameChanged]);
-              return <View testID="general-tab" accessibilityLabel={name ?? 'null'} />;
-            },
-          );
-
-          render(<GameModal {...defaultProps} visible={true} />);
-          await act(async () => {});
+          // now call onNameChanged on the same instance that has errors set
+          act(() => {
+            triggerNameChange('Test Name');
+          });
         });
 
         it('clears the name error', async () => {
