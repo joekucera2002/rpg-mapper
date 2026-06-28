@@ -1,7 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Constants from 'expo-constants';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { colors } from '../../constants';
+import { colors } from '../../../../constants';
 import { TopBarProps } from './TopBar.types';
 
 export function TopBar({ onNewGame }: TopBarProps) {

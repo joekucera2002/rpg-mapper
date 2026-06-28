@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TopBar } from '../../../components/common/TopBar';
+import { TopBar } from '../components/TopBar/TopBar';
 import { GameSelectGrid } from '../components/GameSelectGrid/GameSelectGrid';
 import { useGameStore } from '../../../store/gameStore';
 import { GameModal } from '../components/GameModal/GameModal';
