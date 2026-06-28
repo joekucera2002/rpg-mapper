@@ -22,6 +22,7 @@
     "@nozbe/watermelondb": "^0.28.0",
     "@react-navigation/native": "^7.2.4",
     "@react-navigation/native-stack": "^7.15.0",
+    "@react-navigation/stack": "^7.10.6",
     "@shopify/react-native-skia": "2.2.12",
     "babel-preset-expo": "~54.0.10",
     "expo": "~54.0.33",
@@ -60,7 +61,8 @@
   "jest": {
     "preset": "jest-expo",
     "setupFilesAfterEnv": [
-      "@testing-library/jest-native/extend-expect"
+      "@testing-library/jest-native/extend-expect",
+      "react-native-gesture-handler/jestSetup"
     ],
     "moduleNameMapper": {
       "@expo/vector-icons": "<rootDir>/__mocks__/@expo/vector-icons.js"

@@ -4,9 +4,9 @@ import { colors } from '../../../../constants';
 import { dimColor, initials, lastUpdatedTime } from '../../../../utils/formatting';
 import { FontAwesome5 } from '@expo/vector-icons';
 
-export function GameCard({ game, onEdit }: GameCardProps) {
+export function GameCard({ game, onEdit, onPress }: GameCardProps) {
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.8}>
+    <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={onPress} testID="gamecard">
       <View style={[styles.accentBar, { backgroundColor: game.color }]} testID="accent-bar" />
 
       <View style={styles.banner}>

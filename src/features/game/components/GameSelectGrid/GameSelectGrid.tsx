@@ -4,7 +4,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { colors } from '../../../../constants';
 import { GameCard } from './GameCard';
 
-export function GameSelectGrid({ games, onEditGame }: GameSelectGridProps) {
+export function GameSelectGrid({ games, onEditGame, onSelectGame }: GameSelectGridProps) {
   const numColumns = 2;
 
   return (
@@ -16,7 +16,11 @@ export function GameSelectGrid({ games, onEditGame }: GameSelectGridProps) {
       columnWrapperStyle={styles.row}
       renderItem={({ item }) => (
         <View style={styles.cardWrap} testID={`gamecard-${item.id}`}>
-          <GameCard game={item} onEdit={() => onEditGame(item)} />
+          <GameCard
+            game={item}
+            onEdit={() => onEditGame(item)}
+            onPress={() => onSelectGame(item)}
+          />
         </View>
       )}
       ListHeaderComponent={() => <Text style={styles.sectionLabel}>Games</Text>}

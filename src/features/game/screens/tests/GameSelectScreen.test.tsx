@@ -2,41 +2,56 @@ import { act } from 'react';
 import { View } from 'react-native';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { GameSelectScreen } from '../GameSelectScreen';
-import { GameStore, useGameStore } from '../../store/gameStore';
-import { Game, GameData } from '../../features/game/types/game';
-import * as GameModalModule from '../../features/game/components/GameModal/GameModal';
-import * as GameSelectGridModule from '../../features/game/components/GameSelectGrid/GameSelectGrid';
-import { GAME_COLORS } from '../../constants';
+import { GameStore, useGameStore } from '../../../../store/gameStore';
+import { Game, GameData } from '../../types/game';
+import * as GameModalModule from '../../components/GameModal/GameModal';
+import * as GameSelectGridModule from '../../components/GameSelectGrid/GameSelectGrid';
+import { GAME_COLORS } from '../../../../constants';
+import { NavigationContainer } from '@react-navigation/native';
 
-jest.mock('../../data/database', () => ({
+const mockAddGame = jest.fn();
+const mockUpdateGame = jest.fn();
+const mockDeleteGame = jest.fn();
+
+const mockNavigation = {
+  navigate: jest.fn(),
+  goBack: jest.fn(),
+};
+
+jest.mock('@react-navigation/native', () => {
+  const actual = jest.requireActual('@react-navigation/native');
+  return {
+    ...actual,
+    useNavigation: () => mockNavigation,
+  };
+});
+
+jest.mock('../../../../data/database', () => ({
   database: {
     get: jest.fn(),
     write: jest.fn(),
   },
 }));
-jest.mock('../../store/gameStore');
+jest.mock('../../../../store/gameStore');
 
 jest.spyOn(GameModalModule, 'GameModal');
 jest.spyOn(GameSelectGridModule, 'GameSelectGrid');
-
-const addGameMock = jest.fn();
-const updateGameMock = jest.fn();
-const deleteGameMock = jest.fn();
 
 describe('GameSelectScreen tests', () => {
   let capturedOnCancel: () => void;
   let capturedOnSave: (data: GameData) => void;
   let capturedOnEditGame: (game: Game) => void;
   let capturedOnDelete: (id: string) => void;
+  let capturedOnSelectGame: (game: Game) => void;
 
   beforeEach(() => {
     jest.clearAllMocks();
 
     jest.mocked(useGameStore).mockReturnValue({
       games: [],
-      addGame: addGameMock,
-      updateGame: updateGameMock,
-      deleteGame: deleteGameMock,
+      addGame: mockAddGame,
+      updateGame: mockUpdateGame,
+      deleteGame: mockDeleteGame,
       loadGames: jest.fn(),
     } as unknown as GameStore);
 
@@ -49,10 +64,13 @@ describe('GameSelectScreen tests', () => {
       },
     );
 
-    (GameSelectGridModule.GameSelectGrid as jest.Mock).mockImplementation(({ onEditGame }) => {
-      capturedOnEditGame = onEditGame;
-      return <View testID="game-grid" />;
-    });
+    (GameSelectGridModule.GameSelectGrid as jest.Mock).mockImplementation(
+      ({ onEditGame, onSelectGame }) => {
+        capturedOnEditGame = onEditGame;
+        capturedOnSelectGame = onSelectGame;
+        return <View testID="game-grid" />;
+      },
+    );
   });
 
   describe('initial state', () => {
@@ -100,7 +118,7 @@ describe('GameSelectScreen tests', () => {
       });
 
       it('addGame is not called', () => {
-        expect(addGameMock).not.toHaveBeenCalled();
+        expect(mockAddGame).not.toHaveBeenCalled();
       });
     });
 
@@ -118,7 +136,7 @@ describe('GameSelectScreen tests', () => {
       });
 
       it('calls addGame', () => {
-        expect(addGameMock).toHaveBeenCalledWith(newGame);
+        expect(mockAddGame).toHaveBeenCalledWith(newGame);
       });
 
       it('closes the modal', () => {
@@ -171,7 +189,7 @@ describe('GameSelectScreen tests', () => {
       });
 
       it('updateGame is not called', () => {
-        expect(updateGameMock).not.toHaveBeenCalled();
+        expect(mockUpdateGame).not.toHaveBeenCalled();
       });
     });
 
@@ -189,7 +207,7 @@ describe('GameSelectScreen tests', () => {
       });
 
       it('calls updateGame', () => {
-        expect(updateGameMock).toHaveBeenCalledWith(game.id, editedGame);
+        expect(mockUpdateGame).toHaveBeenCalledWith(game.id, editedGame);
       });
 
       it('closes the modal', () => {
@@ -208,8 +226,35 @@ describe('GameSelectScreen tests', () => {
       });
 
       it('calls deleteGame', () => {
-        expect(deleteGameMock).toHaveBeenCalledWith(game.id);
+        expect(mockDeleteGame).toHaveBeenCalledWith(game.id);
       });
+    });
+  });
+
+  describe('when selecting a game', () => {
+    const game: Game = {
+      id: 'Game1',
+      name: 'Game 1',
+      color: GAME_COLORS[2],
+      image: null,
+      createdAt: Date.now() - 10000,
+      lastUpdated: Date.now() - 10000,
+    };
+
+    beforeEach(async () => {
+      render(
+        <NavigationContainer>
+          <GameSelectScreen />
+        </NavigationContainer>,
+      );
+
+      await act(async () => {
+        capturedOnSelectGame(game);
+      });
+    });
+
+    it('navigates to MapEditor when a game card is tapped', () => {
+      expect(mockNavigation.navigate).toHaveBeenCalledWith('MapEditor', { gameId: 'Game1' });
     });
   });
 });

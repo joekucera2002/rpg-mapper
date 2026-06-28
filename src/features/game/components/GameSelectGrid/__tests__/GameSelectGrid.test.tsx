@@ -10,6 +10,7 @@ jest.spyOn(GameCardModule, 'GameCard');
 const defaultProps: GameSelectGridProps = {
   games: [],
   onEditGame: jest.fn(),
+  onSelectGame: jest.fn(),
 };
 
 describe('GameSelectGrid tests', () => {
@@ -74,6 +75,29 @@ describe('GameSelectGrid tests', () => {
         it('calls onEditGame with game as argument', async () => {
           await waitFor(() => {
             expect(defaultProps.onEditGame).toHaveBeenCalledWith(games[1]);
+          });
+        });
+      });
+
+      describe('when a card is pressed', () => {
+        let capturedOnPress: () => void;
+
+        beforeEach(() => {
+          (GameCardModule.GameCard as jest.Mock).mockImplementation(({ onPress }) => {
+            capturedOnPress = onPress;
+            return <View testID={`gamecard-${games[1].id}`} />;
+          });
+
+          render(<GameSelectGrid {...defaultProps} games={games} />);
+
+          act(() => {
+            capturedOnPress();
+          });
+        });
+
+        it('calls onSelectGame', async () => {
+          await waitFor(async () => {
+            expect(defaultProps.onSelectGame).toHaveBeenCalledWith(games[1]);
           });
         });
       });

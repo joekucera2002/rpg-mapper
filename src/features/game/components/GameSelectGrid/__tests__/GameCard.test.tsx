@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { GAME_COLORS } from '../../../../../constants';
 import { GameCard } from '../GameCard';
 import { GameCardProps } from '../GameCard.types';
@@ -14,6 +14,7 @@ const defaultProps: GameCardProps = {
     lastUpdated: Date.now(),
   },
   onEdit: jest.fn(),
+  onPress: jest.fn(),
 };
 
 describe('GameCard tests', () => {
@@ -115,6 +116,20 @@ describe('GameCard tests', () => {
 
     it('calls onEdit', async () => {
       expect(defaultProps.onEdit).toHaveBeenCalled();
+    });
+  });
+
+  describe('when selecting game', () => {
+    beforeEach(() => {
+      render(<GameCard {...defaultProps} />);
+
+      fireEvent.press(screen.getByTestId('gamecard'));
+    });
+
+    it('calls onPress', async () => {
+      await waitFor(async () => {
+        expect(defaultProps.onPress).toHaveBeenCalled();
+      });
     });
   });
 });

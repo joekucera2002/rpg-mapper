@@ -1,10 +1,9 @@
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { GameSelectScreen } from './src/screens/GameSelectScreen';
+import { enableScreens } from 'react-native-screens';
+enableScreens();
+
+import React from 'react';
+import { RootNavigator } from './src/navigation/RootNavigator';
 
 export default function App() {
-  return (
-    <SafeAreaProvider>
-      <GameSelectScreen />
-    </SafeAreaProvider>
-  );
+  return <RootNavigator />;
 }
