@@ -5,8 +5,8 @@ import * as GeneralTabModule from '../GeneralTab';
 import * as TabBarModule from '../../../../../components/common/TabBar';
 import React from 'react';
 import { GAME_COLORS } from '../../../../../constants';
-import { Game } from '../../../types/game';
 import { View } from 'react-native';
+import { createGame } from '../../../../../testutils/gameFactory';
 
 jest.spyOn(GeneralTabModule, 'GeneralTab');
 jest.spyOn(TabBarModule, 'TabBar');
@@ -108,14 +108,7 @@ describe('GameModal tests', () => {
     });
 
     describe('when game is not null (editing game)', () => {
-      const game: Game = {
-        id: 'TestGame1',
-        name: 'Test Game 1',
-        color: GAME_COLORS[5],
-        image: 'Test Image 1',
-        createdAt: Date.now() - 1000,
-        lastUpdated: Date.now() - 150,
-      };
+      const game = createGame();
 
       beforeEach(() => {
         render(<GameModal {...defaultProps} visible={true} game={game} />);

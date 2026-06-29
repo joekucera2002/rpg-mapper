@@ -1,9 +1,9 @@
 import { act, render, screen, waitFor } from '@testing-library/react-native';
 import { GameSelectGrid } from '../GameSelectGrid';
 import { GameSelectGridProps } from '../GameSelectGrid.types';
-import { Game } from '../../../types/game';
 import * as GameCardModule from '../GameCard';
 import { View } from 'react-native';
+import { createGames } from '../../../../../testutils/gameFactory';
 
 jest.spyOn(GameCardModule, 'GameCard');
 
@@ -28,32 +28,15 @@ describe('GameSelectGrid tests', () => {
     });
 
     describe('when games exist', () => {
-      const games: Game[] = [
-        {
-          id: 'Game1',
-          name: 'Game 1',
-          color: 'Color 1',
-          image: null,
-          lastUpdated: Date.now(),
-          createdAt: Date.now(),
-        },
-        {
-          id: 'Game2',
-          name: 'Game 2',
-          color: 'Color 2',
-          image: null,
-          lastUpdated: Date.now(),
-          createdAt: Date.now(),
-        },
-      ];
+      const games = createGames(2);
 
       beforeEach(() => {
         render(<GameSelectGrid {...defaultProps} games={games} />);
       });
 
       it('renders game cards', () => {
-        expect(screen.getByTestId('gamecard-Game1')).toBeTruthy();
-        expect(screen.getByTestId('gamecard-Game2')).toBeTruthy();
+        expect(screen.getByTestId('gamecard-1')).toBeTruthy();
+        expect(screen.getByTestId('gamecard-2')).toBeTruthy();
       });
 
       describe('when onEdit is called from GameCard', () => {

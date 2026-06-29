@@ -1,6 +1,7 @@
 import { useGameStore } from '../gameStore';
 import { database } from '../../data/database';
 import { GameData } from '../../features/game/types/game';
+import { createGame } from '../../testutils/gameFactory';
 
 jest.mock('../../data/database', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -106,7 +107,7 @@ describe('gameStore tests', () => {
     beforeEach(async () => {
       const { addGame, loadGames } = useGameStore.getState();
 
-      await addGame({ name: 'Game 1', color: 'Color 1', image: 'Image 1' });
+      await addGame(createGame());
       await loadGames();
     });
 
@@ -150,7 +151,7 @@ describe('gameStore tests', () => {
     beforeEach(async () => {
       const { addGame, loadGames } = useGameStore.getState();
 
-      await addGame({ name: 'Game 1', color: 'Color 1', image: 'Image 1' });
+      await addGame(createGame());
       await loadGames();
     });
 

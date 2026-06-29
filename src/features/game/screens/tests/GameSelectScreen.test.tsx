@@ -8,6 +8,7 @@ import * as GameModalModule from '../../components/GameModal/GameModal';
 import * as GameSelectGridModule from '../../components/GameSelectGrid/GameSelectGrid';
 import { GAME_COLORS } from '../../../../constants';
 import { NavigationContainer } from '@react-navigation/native';
+import { createGame } from '../../../../testutils/gameFactory';
 
 const mockAddGame = jest.fn();
 const mockUpdateGame = jest.fn();
@@ -149,14 +150,7 @@ describe('GameSelectScreen tests', () => {
   });
 
   describe('when editing a game', () => {
-    const game: Game = {
-      id: 'Game1',
-      name: 'Game 1',
-      color: GAME_COLORS[2],
-      image: null,
-      createdAt: Date.now() - 10000,
-      lastUpdated: Date.now() - 10000,
-    };
+    const game = createGame();
 
     beforeEach(async () => {
       render(<GameSelectScreen />);
@@ -194,11 +188,7 @@ describe('GameSelectScreen tests', () => {
     });
 
     describe('when the modal is saved', () => {
-      const editedGame: GameData = {
-        name: 'Edited Game',
-        color: GAME_COLORS[2],
-        image: 'Image 1',
-      };
+      const editedGame = createGame();
 
       beforeEach(async () => {
         await act(async () => {
@@ -232,14 +222,7 @@ describe('GameSelectScreen tests', () => {
   });
 
   describe('when selecting a game', () => {
-    const game: Game = {
-      id: 'Game1',
-      name: 'Game 1',
-      color: GAME_COLORS[2],
-      image: null,
-      createdAt: Date.now() - 10000,
-      lastUpdated: Date.now() - 10000,
-    };
+    const game = createGame();
 
     beforeEach(async () => {
       render(
@@ -254,7 +237,7 @@ describe('GameSelectScreen tests', () => {
     });
 
     it('navigates to MapEditor when a game card is tapped', () => {
-      expect(mockNavigation.navigate).toHaveBeenCalledWith('MapEditor', { gameId: 'Game1' });
+      expect(mockNavigation.navigate).toHaveBeenCalledWith('MapEditor', { gameId: game.id });
     });
   });
 });

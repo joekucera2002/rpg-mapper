@@ -1,18 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { GAME_COLORS } from '../../../../../constants';
 import { GameCard } from '../GameCard';
 import { GameCardProps } from '../GameCard.types';
-import { dimColor, lastUpdatedTime } from '../../../../../utils/formatting';
+import { dimColor, initials, lastUpdatedTime } from '../../../../../utils/formatting';
+import { createGame } from '../../../../../testutils/gameFactory';
 
 const defaultProps: GameCardProps = {
-  game: {
-    id: 'TestId',
-    name: 'Test Name',
-    color: GAME_COLORS[0],
-    image: null,
-    createdAt: Date.now() - 10000,
-    lastUpdated: Date.now(),
-  },
+  game: createGame({ image: null }),
   onEdit: jest.fn(),
   onPress: jest.fn(),
 };
@@ -56,12 +49,15 @@ describe('GameCard tests', () => {
     });
 
     it('game initials are shown', () => {
-      expect(screen.getByTestId('initials-text')).toBeTruthy();
-      expect(screen.getByText('TN')).toBeTruthy();
+      const text = screen.getByTestId('initials-text');
+
+      expect(text.props.children).toBe(initials(defaultProps.game.name));
     });
 
     it('sets the game name', () => {
-      expect(screen.getByText('Test Name')).toBeTruthy();
+      const text = screen.getByTestId('name-text');
+
+      expect(text.props.children).toBe(defaultProps.game.name);
     });
 
     it('gets the last updated formatted metadata', () => {
