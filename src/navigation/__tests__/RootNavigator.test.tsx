@@ -33,6 +33,4 @@ describe('RootNavigator tests', () => {
 
     it('renders GameSelectScreen as the initial screen', () => {});
   });
-
-  // TODO: test navigation to map editor screen
 });
