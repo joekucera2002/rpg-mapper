@@ -28,10 +28,14 @@ jobs:
         run: npm ci
 
       - name: Lint
+        id: lint
         run: npm run lint
+        continue-on-error: true
 
       - name: Type check
+        id: typecheck
         run: npm run typecheck
+        continue-on-error: true
 
       - name: Test with coverage
         run: npm run test:coverage
@@ -60,3 +64,10 @@ jobs:
           name: coverage
           path: coverage/
           retention-days: 7
+
+      - name: Fail if lint or typecheck failed
+        if: always()
+        run: |
+          if [ "${{ steps.lint.outcome }}" = "failure" ] || [ "${{ steps.typecheck.outcome }}" = "failure" ]; then
+            exit 1
+          fi
