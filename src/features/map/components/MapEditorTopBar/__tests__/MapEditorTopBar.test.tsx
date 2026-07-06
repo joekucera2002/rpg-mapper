@@ -3,60 +3,47 @@ import { MapEditorTopBar } from '../MapEditorTopBar';
 import { MapEditorTopBarProps } from '../MapEditorTopBar.types';
 import { createGame } from '../../../../../testutils/gameFactory';
 
-const defaultProps: MapEditorTopBarProps = {
-  game: createGame(),
-  onBack: jest.fn(),
-};
+let defaultProps: MapEditorTopBarProps;
 
-describe('MapEditorTopBar tests', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+beforeEach(() => {
+  defaultProps = {
+    game: createGame(),
+    onBack: jest.fn(),
+  };
+});
 
-  it('renders', () => {
+describe('MapEditorTopBar', () => {
+  it('renders without crashing', () => {
     expect(() => render(<MapEditorTopBar {...defaultProps} />)).not.toThrow();
   });
 
-  describe('initial state', () => {
-    describe('when game is null', () => {
-      beforeEach(() => {
-        render(<MapEditorTopBar {...defaultProps} game={null} />);
-      });
+  describe('when game is null', () => {
+    it('does not render the game chip', () => {
+      render(<MapEditorTopBar {...defaultProps} game={null} />);
+      expect(screen.queryByTestId('game-chip')).toBeNull();
+    });
+  });
 
-      it('does not render game chip', () => {
-        expect(screen.queryByTestId('game-chip')).toBeNull();
+  describe('when game is provided', () => {
+    it('sets the game color on the dot', () => {
+      render(<MapEditorTopBar {...defaultProps} />);
+      expect(screen.getByTestId('game-dot')).toHaveStyle({
+        backgroundColor: defaultProps.game?.color,
       });
     });
 
-    describe('when game is not null', () => {
-      beforeEach(() => {
-        render(<MapEditorTopBar {...defaultProps} />);
-      });
-
-      it('sets the game color', () => {
-        expect(screen.getByTestId('game-dot')).toHaveStyle({
-          backgroundColor: defaultProps.game?.color,
-        });
-      });
-
-      it('sets the game name', () => {
-        const text = screen.getByTestId('gamename-text');
-
-        expect(text.props.children).toBe(defaultProps.game?.name);
-      });
+    it('displays the game name', () => {
+      render(<MapEditorTopBar {...defaultProps} />);
+      expect(screen.getByTestId('gamename-text').props.children).toBe(defaultProps.game?.name);
     });
+  });
 
-    describe('when back button is pressed', () => {
-      beforeEach(() => {
-        render(<MapEditorTopBar {...defaultProps} />);
-
-        fireEvent.press(screen.getByTestId('back-button'));
-      });
-
-      it('calls onBack', async () => {
-        await waitFor(async () => {
-          expect(defaultProps.onBack).toHaveBeenCalled();
-        });
+  describe('when the back button is pressed', () => {
+    it('calls onBack', async () => {
+      render(<MapEditorTopBar {...defaultProps} />);
+      fireEvent.press(screen.getByTestId('back-button'));
+      await waitFor(() => {
+        expect(defaultProps.onBack).toHaveBeenCalledTimes(1);
       });
     });
   });

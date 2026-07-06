@@ -1,21 +1,19 @@
-import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { TopBar } from '../TopBar';
 import { TopBarProps } from '../TopBar.types';
 
-const defaultProps: TopBarProps = {
-  onNewGame: jest.fn(),
-};
+let defaultProps: TopBarProps;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  defaultProps = {
+    onNewGame: jest.fn(),
+  };
 });
 
-describe('TopBar component tests', () => {
+describe('TopBar', () => {
   describe('initial state', () => {
     it('renders the app name', () => {
       render(<TopBar {...defaultProps} />);
-
       expect(screen.getAllByText('RPG Mapper')).toBeTruthy();
     });
 
@@ -30,13 +28,11 @@ describe('TopBar component tests', () => {
     });
   });
 
-  describe('when new game is tapped', () => {
-    it('calls onNewGame when the new game button is tapped', () => {
+  describe('when the new game button is tapped', () => {
+    it('calls onNewGame', () => {
       render(<TopBar {...defaultProps} />);
-
       fireEvent.press(screen.getByTestId('newgame-button'));
-
-      expect(defaultProps.onNewGame).toHaveBeenCalled();
+      expect(defaultProps.onNewGame).toHaveBeenCalledTimes(1);
     });
   });
 });

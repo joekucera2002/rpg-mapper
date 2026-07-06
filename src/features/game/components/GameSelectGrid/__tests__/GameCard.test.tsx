@@ -4,127 +4,120 @@ import { GameCardProps } from '../GameCard.types';
 import { dimColor, initials, lastUpdatedTime } from '../../../../../utils/formatting';
 import { createGame } from '../../../../../testutils/gameFactory';
 
-const defaultProps: GameCardProps = {
-  game: createGame({ image: null }),
-  onEdit: jest.fn(),
-  onPress: jest.fn(),
-};
+let defaultProps: GameCardProps;
 
-describe('GameCard tests', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+beforeEach(() => {
+  defaultProps = {
+    game: createGame({ image: null }),
+    onEdit: jest.fn(),
+    onPress: jest.fn(),
+  };
+});
 
+describe('GameCard', () => {
   describe('initial state', () => {
-    beforeEach(() => {
+    it('sets the game color on the accent bar', () => {
       render(<GameCard {...defaultProps} />);
-    });
-
-    it('sets the game color', () => {
       const accentBar = screen.getByTestId('accent-bar');
-      const accentBarStyles = Array.isArray(accentBar.props.style)
+      const styles = Array.isArray(accentBar.props.style)
         ? Object.assign({}, ...accentBar.props.style)
         : accentBar.props.style;
-
-      expect(accentBarStyles.backgroundColor).toBe(defaultProps.game.color);
+      expect(styles.backgroundColor).toBe(defaultProps.game.color);
     });
 
     it('banner gradient is visible', () => {
+      render(<GameCard {...defaultProps} />);
       expect(screen.getByTestId('banner-gradient')).toBeTruthy();
     });
 
-    it('banner gradient is set to the game color', () => {
+    it('banner gradient is set to the dimmed game color', () => {
+      render(<GameCard {...defaultProps} />);
       const bannerGradient = screen.getByTestId('banner-gradient');
-      const accentBarStyles = Array.isArray(bannerGradient.props.style)
+      const styles = Array.isArray(bannerGradient.props.style)
         ? Object.assign({}, ...bannerGradient.props.style)
         : bannerGradient.props.style;
-
-      const expected = dimColor(defaultProps.game.color, 0.5);
-
-      expect(accentBarStyles.backgroundColor).toBe(expected);
+      expect(styles.backgroundColor).toBe(dimColor(defaultProps.game.color, 0.5));
     });
 
-    it('image is not visible', () => {
+    it('image is not visible when game has no image', () => {
+      render(<GameCard {...defaultProps} />);
       expect(screen.queryByTestId('banner-image')).toBeNull();
     });
 
-    it('game initials are shown', () => {
-      const text = screen.getByTestId('initials-text');
-
-      expect(text.props.children).toBe(initials(defaultProps.game.name));
+    it('shows game initials', () => {
+      render(<GameCard {...defaultProps} />);
+      expect(screen.getByTestId('initials-text').props.children).toBe(
+        initials(defaultProps.game.name),
+      );
     });
 
-    it('sets the game name', () => {
-      const text = screen.getByTestId('name-text');
-
-      expect(text.props.children).toBe(defaultProps.game.name);
+    it('shows the game name', () => {
+      render(<GameCard {...defaultProps} />);
+      expect(screen.getByTestId('name-text').props.children).toBe(defaultProps.game.name);
     });
 
-    it('gets the last updated formatted metadata', () => {
-      expect(screen.getByTestId('lastupdated-text')).toBeTruthy();
+    it('shows the formatted last updated time', () => {
+      render(<GameCard {...defaultProps} />);
       expect(screen.getByTestId('lastupdated-text')).toHaveTextContent(
         lastUpdatedTime(defaultProps.game.lastUpdated),
       );
     });
+  });
 
-    describe('when image is not null', () => {
-      beforeEach(() => {
-        render(
-          <GameCard
-            {...defaultProps}
-            game={{ ...defaultProps.game, image: 'file://path/to/cover.jpg' }}
-          />,
-        );
-      });
+  describe('when the game has an image', () => {
+    it('displays the banner image', () => {
+      const props = {
+        ...defaultProps,
+        game: { ...defaultProps.game, image: 'file://path/to/cover.jpg' },
+      };
+      render(<GameCard {...props} />);
+      expect(screen.getByTestId('banner-image')).toBeTruthy();
+    });
 
-      it('image is visible', () => {
-        expect(screen.getByTestId('banner-image')).toBeTruthy();
-      });
+    it('does not show the banner gradient', () => {
+      const props = {
+        ...defaultProps,
+        game: { ...defaultProps.game, image: 'file://path/to/cover.jpg' },
+      };
+      render(<GameCard {...props} />);
+      expect(screen.queryByTestId('banner-gradient')).toBeNull();
+    });
 
-      it('banner gradient is not visible', () => {
-        expect(screen.queryByTestId('banner-gradient')).toBeNull();
-      });
+    it('does not show game initials', () => {
+      const props = {
+        ...defaultProps,
+        game: { ...defaultProps.game, image: 'file://path/to/cover.jpg' },
+      };
+      render(<GameCard {...props} />);
+      expect(screen.queryByTestId('initials-text')).toBeNull();
+    });
 
-      it('game initials are not shown', () => {
-        expect(screen.queryByTestId('initials-text')).toBeNull();
-      });
-
-      it('sets the image uri when game.image is provided', () => {
-        render(
-          <GameCard
-            {...defaultProps}
-            game={{ ...defaultProps.game, image: 'file://path/to/cover.jpg' }}
-          />,
-        );
-
-        const image = screen.getByTestId('banner-image');
-        expect(image.props.source).toEqual({ uri: 'file://path/to/cover.jpg' });
+    it('sets the image uri', () => {
+      const props = {
+        ...defaultProps,
+        game: { ...defaultProps.game, image: 'file://path/to/cover.jpg' },
+      };
+      render(<GameCard {...props} />);
+      expect(screen.getByTestId('banner-image').props.source).toEqual({
+        uri: 'file://path/to/cover.jpg',
       });
     });
   });
 
-  describe('when editing a game', () => {
-    beforeEach(() => {
+  describe('when the edit button is pressed', () => {
+    it('calls onEdit', () => {
       render(<GameCard {...defaultProps} />);
-
       fireEvent.press(screen.getByTestId('edit-button'));
-    });
-
-    it('calls onEdit', async () => {
-      expect(defaultProps.onEdit).toHaveBeenCalled();
+      expect(defaultProps.onEdit).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe('when selecting game', () => {
-    beforeEach(() => {
-      render(<GameCard {...defaultProps} />);
-
-      fireEvent.press(screen.getByTestId('gamecard'));
-    });
-
+  describe('when the game card is pressed', () => {
     it('calls onPress', async () => {
-      await waitFor(async () => {
-        expect(defaultProps.onPress).toHaveBeenCalled();
+      render(<GameCard {...defaultProps} />);
+      fireEvent.press(screen.getByTestId('gamecard'));
+      await waitFor(() => {
+        expect(defaultProps.onPress).toHaveBeenCalledTimes(1);
       });
     });
   });

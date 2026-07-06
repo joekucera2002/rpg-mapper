@@ -60,6 +60,8 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "clearMocks": true,
+    "maxWorkers": "50%",
     "setupFilesAfterEnv": [
       "@testing-library/jest-native/extend-expect",
       "react-native-gesture-handler/jestSetup"

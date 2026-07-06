@@ -11,11 +11,10 @@ import { createGame } from '../../../../../testutils/gameFactory';
 jest.spyOn(GeneralTabModule, 'GeneralTab');
 jest.spyOn(TabBarModule, 'TabBar');
 
-describe('GameModal tests', () => {
-  let capturedOnDeleteGame: () => void;
-  let capturedOnTabChange: (key: string) => void;
+let defaultProps: GameModalProps;
 
-  const defaultProps: GameModalProps = {
+beforeEach(() => {
+  defaultProps = {
     game: null,
     visible: false,
     onCancel: jest.fn(),
@@ -23,294 +22,250 @@ describe('GameModal tests', () => {
     onDelete: jest.fn(),
   };
 
-  beforeEach(() => {
-    jest.clearAllMocks();
+  (TabBarModule.TabBar as jest.Mock).mockImplementation(({ activeTab }) => (
+    <View testID="tab-bar" accessibilityLabel={activeTab} />
+  ));
 
-    (TabBarModule.TabBar as jest.Mock).mockImplementation(({ onTabChange, activeTab }) => {
-      capturedOnTabChange = onTabChange;
-      return <View testID="tab-bar" accessibilityLabel={activeTab} />;
-    });
+  (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(() => null);
+});
 
-    (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(({ onDeleteGame }) => {
-      capturedOnDeleteGame = onDeleteGame;
-      return null;
-    });
-  });
-
-  describe('initial state', () => {
-    beforeEach(() => {
-      render(<GameModal {...defaultProps} />);
-    });
-
-    it('should not be shown when visible is false', () => {
+describe('GameModal', () => {
+  describe('visibility', () => {
+    it('is not shown when visible is false', () => {
+      render(<GameModal {...defaultProps} visible={false} />);
       expect(screen.queryByTestId('game-modal')).toBeNull();
     });
 
-    describe('when game is null (adding game)', () => {
-      beforeEach(() => {
-        render(<GameModal {...defaultProps} visible={true} />);
-      });
-
-      it('should select the General Tab', () => {
-        expect(screen.getByTestId('tab-bar').props.accessibilityLabel).toBe('general');
-      });
-
-      it('sets the modal title', () => {
-        const title = screen.getByTestId('title-text');
-
-        expect(title.props.children).toBe('New Game');
-      });
-
-      it('sets the confirm button text', () => {
-        const title = screen.getByTestId('confirmbutton-text');
-
-        expect(title.props.children).toBe('Create Game');
-      });
-
-      it('passed the name props', () => {
-        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
-          expect.objectContaining({
-            name: '',
-            onNameChanged: expect.any(Function),
-          }),
-          undefined,
-        );
-      });
-
-      it('passed the image props', () => {
-        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
-          expect.objectContaining({
-            image: null,
-            onImageChanged: expect.any(Function),
-          }),
-          undefined,
-        );
-      });
-
-      it('passed the color props', () => {
-        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
-          expect.objectContaining({
-            color: GAME_COLORS[0],
-            onColorChanged: expect.any(Function),
-          }),
-          undefined,
-        );
-      });
-
-      it('passed the isEditMode prop', () => {
-        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
-          expect.objectContaining({
-            isEditMode: false,
-          }),
-          undefined,
-        );
-      });
-    });
-
-    describe('when game is not null (editing game)', () => {
-      const game = createGame();
-
-      beforeEach(() => {
-        render(<GameModal {...defaultProps} visible={true} game={game} />);
-      });
-
-      it('should select the General Tab', () => {
-        expect(screen.getByTestId('tab-bar').props.accessibilityLabel).toBe('general');
-      });
-
-      it('sets the modal title', () => {
-        const title = screen.getByTestId('title-text');
-
-        expect(title.props.children).toBe('Edit Game');
-      });
-
-      it('sets the confirm button text', () => {
-        const title = screen.getByTestId('confirmbutton-text');
-
-        expect(title.props.children).toBe('Save Changes');
-      });
-
-      it('passed the name props', () => {
-        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
-          expect.objectContaining({
-            name: game.name,
-            onNameChanged: expect.any(Function),
-          }),
-          undefined,
-        );
-      });
-
-      it('passed the image props', () => {
-        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
-          expect.objectContaining({
-            image: game.image,
-            onImageChanged: expect.any(Function),
-          }),
-          undefined,
-        );
-      });
-
-      it('passed the color props', () => {
-        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
-          expect.objectContaining({
-            color: game.color,
-            onColorChanged: expect.any(Function),
-          }),
-          undefined,
-        );
-      });
-
-      it('passed the isEditMode prop', () => {
-        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
-          expect.objectContaining({
-            isEditMode: true,
-          }),
-          undefined,
-        );
-      });
-
-      it('passed the onDeleteGame prop', () => {
-        expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
-          expect.objectContaining({
-            onDeleteGame: expect.any(Function),
-          }),
-          undefined,
-        );
-      });
-
-      describe('when deleting the game', () => {
-        beforeEach(() => {
-          act(() => {
-            capturedOnDeleteGame();
-          });
-        });
-
-        it('calls onDelete', () => {
-          expect(defaultProps.onDelete).toHaveBeenCalled();
-        });
-      });
-    });
-  });
-
-  describe('when opening the modal', () => {
-    beforeEach(() => {
+    it('is shown when visible is true', () => {
       render(<GameModal {...defaultProps} visible={true} />);
-    });
-
-    it('should be shown', () => {
       expect(screen.getByTestId('game-modal')).toBeTruthy();
     });
   });
 
-  describe('when editing the basics tab', () => {
-    describe('when setting the active tab', () => {
-      beforeEach(() => {
-        render(<GameModal {...defaultProps} visible={true} />);
-
-        act(() => {
-          capturedOnTabChange('general');
-        });
-      });
-
-      it('should select the General Tab', () => {
-        expect(screen.getByTestId('tab-bar').props.accessibilityLabel).toBe('general');
-      });
-    });
-
-    describe('when updating the name', () => {
-      beforeEach(async () => {
-        (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(({ onNameChanged, name }) => {
-          React.useEffect(() => {
-            onNameChanged('Test Name');
-          }, [onNameChanged]);
-          return <View testID="general-tab" accessibilityLabel={name ?? 'null'} />;
-        });
-
-        render(<GameModal {...defaultProps} visible={true} />);
-
-        await act(async () => {});
-      });
-
-      it('updates the name in state', () => {
-        expect(screen.getByTestId('general-tab').props.accessibilityLabel).toBe('Test Name');
-      });
-
-      it('clears the name error', async () => {
-        await waitFor(() => {
-          expect(GeneralTabModule.GeneralTab).toHaveBeenLastCalledWith(
-            expect.objectContaining({ nameError: undefined }),
-            undefined,
-          );
-        });
-      });
-    });
-
-    describe('when updating the image', () => {
-      beforeEach(async () => {
-        (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(
-          ({ onImageChanged, image }) => {
-            React.useEffect(() => {
-              onImageChanged('file://test.jpg');
-            }, [onImageChanged]);
-            return <View testID="general-tab" accessibilityLabel={image ?? 'null'} />;
-          },
-        );
-
-        render(<GameModal {...defaultProps} visible={true} />);
-
-        await act(async () => {});
-      });
-
-      it('updates the image in state', () => {
-        expect(screen.getByTestId('general-tab').props.accessibilityLabel).toBe('file://test.jpg');
-      });
-    });
-
-    describe('when updating the color', () => {
-      beforeEach(async () => {
-        (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(
-          ({ onColorChanged, color }) => {
-            React.useEffect(() => {
-              onColorChanged(GAME_COLORS[2]);
-            }, [onColorChanged]);
-            return <View testID="general-tab" accessibilityLabel={color ?? 'null'} />;
-          },
-        );
-
-        render(<GameModal {...defaultProps} visible={true} />);
-
-        await act(async () => {});
-      });
-
-      it('updates the color in state', () => {
-        expect(screen.getByTestId('general-tab').props.accessibilityLabel).toBe(GAME_COLORS[2]);
-      });
-    });
-  });
-
-  describe('when cancelling the modal', () => {
-    beforeEach(() => {
+  describe('when creating a game (game is null)', () => {
+    it('defaults to the General tab', () => {
       render(<GameModal {...defaultProps} visible={true} />);
-
-      fireEvent.press(screen.getByTestId('cancel-button'));
+      expect(screen.getByTestId('tab-bar').props.accessibilityLabel).toBe('general');
     });
 
-    it('calls onCancel', async () => {
+    it('sets the modal title to New Game', () => {
+      render(<GameModal {...defaultProps} visible={true} />);
+      expect(screen.getByTestId('title-text').props.children).toBe('New Game');
+    });
+
+    it('sets the confirm button text to Create Game', () => {
+      render(<GameModal {...defaultProps} visible={true} />);
+      expect(screen.getByTestId('confirmbutton-text').props.children).toBe('Create Game');
+    });
+
+    it('passes empty name to GeneralTab', () => {
+      render(<GameModal {...defaultProps} visible={true} />);
+      expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+        expect.objectContaining({ name: '', onNameChanged: expect.any(Function) }),
+        undefined,
+      );
+    });
+
+    it('passes null image to GeneralTab', () => {
+      render(<GameModal {...defaultProps} visible={true} />);
+      expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+        expect.objectContaining({ image: null, onImageChanged: expect.any(Function) }),
+        undefined,
+      );
+    });
+
+    it('passes default color to GeneralTab', () => {
+      render(<GameModal {...defaultProps} visible={true} />);
+      expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+        expect.objectContaining({ color: GAME_COLORS[0], onColorChanged: expect.any(Function) }),
+        undefined,
+      );
+    });
+
+    it('passes isEditMode false to GeneralTab', () => {
+      render(<GameModal {...defaultProps} visible={true} />);
+      expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+        expect.objectContaining({ isEditMode: false }),
+        undefined,
+      );
+    });
+  });
+
+  describe('when editing a game (game is not null)', () => {
+    const game = createGame();
+
+    it('defaults to the General tab', () => {
+      render(<GameModal {...defaultProps} visible={true} game={game} />);
+      expect(screen.getByTestId('tab-bar').props.accessibilityLabel).toBe('general');
+    });
+
+    it('sets the modal title to Edit Game', () => {
+      render(<GameModal {...defaultProps} visible={true} game={game} />);
+      expect(screen.getByTestId('title-text').props.children).toBe('Edit Game');
+    });
+
+    it('sets the confirm button text to Save Changes', () => {
+      render(<GameModal {...defaultProps} visible={true} game={game} />);
+      expect(screen.getByTestId('confirmbutton-text').props.children).toBe('Save Changes');
+    });
+
+    it('passes game name to GeneralTab', () => {
+      render(<GameModal {...defaultProps} visible={true} game={game} />);
+      expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+        expect.objectContaining({ name: game.name }),
+        undefined,
+      );
+    });
+
+    it('passes game image to GeneralTab', () => {
+      render(<GameModal {...defaultProps} visible={true} game={game} />);
+      expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+        expect.objectContaining({ image: game.image }),
+        undefined,
+      );
+    });
+
+    it('passes game color to GeneralTab', () => {
+      render(<GameModal {...defaultProps} visible={true} game={game} />);
+      expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+        expect.objectContaining({ color: game.color }),
+        undefined,
+      );
+    });
+
+    it('passes isEditMode true to GeneralTab', () => {
+      render(<GameModal {...defaultProps} visible={true} game={game} />);
+      expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+        expect.objectContaining({ isEditMode: true }),
+        undefined,
+      );
+    });
+
+    it('passes onDeleteGame to GeneralTab', () => {
+      render(<GameModal {...defaultProps} visible={true} game={game} />);
+      expect(GeneralTabModule.GeneralTab).toHaveBeenCalledWith(
+        expect.objectContaining({ onDeleteGame: expect.any(Function) }),
+        undefined,
+      );
+    });
+
+    it('calls onDelete when onDeleteGame is triggered', () => {
+      let capturedOnDeleteGame: () => void;
+
+      (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(({ onDeleteGame }) => {
+        capturedOnDeleteGame = onDeleteGame;
+        return null;
+      });
+
+      render(<GameModal {...defaultProps} visible={true} game={game} />);
+      act(() => {
+        capturedOnDeleteGame!();
+      });
+
+      expect(defaultProps.onDelete).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('tab switching', () => {
+    it('updates the active tab when onTabChange is called', () => {
+      let capturedOnTabChange: (key: string) => void;
+
+      (TabBarModule.TabBar as jest.Mock).mockImplementation(({ onTabChange, activeTab }) => {
+        capturedOnTabChange = onTabChange;
+        return <View testID="tab-bar" accessibilityLabel={activeTab} />;
+      });
+
+      render(<GameModal {...defaultProps} visible={true} />);
+      act(() => {
+        capturedOnTabChange!('general');
+      });
+
+      expect(screen.getByTestId('tab-bar').props.accessibilityLabel).toBe('general');
+    });
+  });
+
+  describe('when the name is updated', () => {
+    it('updates the name in state', async () => {
+      (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(({ onNameChanged, name }) => {
+        React.useEffect(() => {
+          onNameChanged('Test Name');
+        }, [onNameChanged]);
+        return <View testID="general-tab" accessibilityLabel={name ?? 'null'} />;
+      });
+
+      render(<GameModal {...defaultProps} visible={true} />);
+      await act(async () => {});
+
+      expect(screen.getByTestId('general-tab').props.accessibilityLabel).toBe('Test Name');
+    });
+
+    it('clears the name error when name is updated', async () => {
+      (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(({ onNameChanged, name }) => {
+        React.useEffect(() => {
+          onNameChanged('Test Name');
+        }, [onNameChanged]);
+        return <View testID="general-tab" accessibilityLabel={name ?? 'null'} />;
+      });
+
+      render(<GameModal {...defaultProps} visible={true} />);
+      await act(async () => {});
+
       await waitFor(() => {
-        expect(defaultProps.onCancel).toHaveBeenCalled();
+        expect(GeneralTabModule.GeneralTab).toHaveBeenLastCalledWith(
+          expect.objectContaining({ nameError: undefined }),
+          undefined,
+        );
       });
     });
   });
 
-  describe('when confirming changes', () => {
-    describe('and name is empty', () => {
-      beforeEach(() => {
-        render(<GameModal {...defaultProps} visible={true} />);
-
-        fireEvent.press(screen.getByTestId('confirm-button'));
+  describe('when the image is updated', () => {
+    it('updates the image in state', async () => {
+      (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(({ onImageChanged, image }) => {
+        React.useEffect(() => {
+          onImageChanged('file://test.jpg');
+        }, [onImageChanged]);
+        return <View testID="general-tab" accessibilityLabel={image ?? 'null'} />;
       });
 
-      it('sets the validation error', async () => {
+      render(<GameModal {...defaultProps} visible={true} />);
+      await act(async () => {});
+
+      expect(screen.getByTestId('general-tab').props.accessibilityLabel).toBe('file://test.jpg');
+    });
+  });
+
+  describe('when the color is updated', () => {
+    it('updates the color in state', async () => {
+      (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(({ onColorChanged, color }) => {
+        React.useEffect(() => {
+          onColorChanged(GAME_COLORS[2]);
+        }, [onColorChanged]);
+        return <View testID="general-tab" accessibilityLabel={color ?? 'null'} />;
+      });
+
+      render(<GameModal {...defaultProps} visible={true} />);
+      await act(async () => {});
+
+      expect(screen.getByTestId('general-tab').props.accessibilityLabel).toBe(GAME_COLORS[2]);
+    });
+  });
+
+  describe('when the cancel button is pressed', () => {
+    it('calls onCancel', async () => {
+      render(<GameModal {...defaultProps} visible={true} />);
+      fireEvent.press(screen.getByTestId('cancel-button'));
+      await waitFor(() => {
+        expect(defaultProps.onCancel).toHaveBeenCalledTimes(1);
+      });
+    });
+  });
+
+  describe('when the confirm button is pressed', () => {
+    describe('and the name is empty', () => {
+      it('sets a name validation error', async () => {
+        render(<GameModal {...defaultProps} visible={true} />);
+        fireEvent.press(screen.getByTestId('confirm-button'));
         await waitFor(() => {
           expect(GeneralTabModule.GeneralTab).toHaveBeenLastCalledWith(
             expect.objectContaining({ nameError: 'Name is required' }),
@@ -320,56 +275,46 @@ describe('GameModal tests', () => {
       });
 
       it('does not call onSave', async () => {
+        render(<GameModal {...defaultProps} visible={true} />);
+        fireEvent.press(screen.getByTestId('confirm-button'));
         await waitFor(() => {
           expect(defaultProps.onSave).not.toHaveBeenCalled();
         });
       });
 
-      describe('when updating the name field', () => {
+      it('clears the name error when the name is subsequently updated', async () => {
         let triggerNameChange: (value: string) => void = () => {};
 
-        beforeEach(async () => {
-          // capture onNameChanged from the existing render
-          (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(
-            ({ onNameChanged, name }) => {
-              triggerNameChange = onNameChanged;
-              return <View testID="general-tab" accessibilityLabel={name ?? 'null'} />;
-            },
-          );
-
-          // re-render to pick up the new mock
-          render(<GameModal {...defaultProps} visible={true} />);
-
-          // trigger validation failure to set errors.name
-          fireEvent.press(screen.getByTestId('confirm-button'));
-
-          // wait for error to be set
-          await waitFor(() => {
-            expect(GeneralTabModule.GeneralTab).toHaveBeenLastCalledWith(
-              expect.objectContaining({ nameError: 'Name is required' }),
-              undefined,
-            );
-          });
-
-          // now call onNameChanged on the same instance that has errors set
-          act(() => {
-            triggerNameChange('Test Name');
-          });
+        (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(({ onNameChanged, name }) => {
+          triggerNameChange = onNameChanged;
+          return <View testID="general-tab" accessibilityLabel={name ?? 'null'} />;
         });
 
-        it('clears the name error', async () => {
-          await waitFor(() => {
-            expect(GeneralTabModule.GeneralTab).toHaveBeenLastCalledWith(
-              expect.objectContaining({ nameError: undefined }),
-              undefined,
-            );
-          });
+        render(<GameModal {...defaultProps} visible={true} />);
+        fireEvent.press(screen.getByTestId('confirm-button'));
+
+        await waitFor(() => {
+          expect(GeneralTabModule.GeneralTab).toHaveBeenLastCalledWith(
+            expect.objectContaining({ nameError: 'Name is required' }),
+            undefined,
+          );
+        });
+
+        act(() => {
+          triggerNameChange('Test Name');
+        });
+
+        await waitFor(() => {
+          expect(GeneralTabModule.GeneralTab).toHaveBeenLastCalledWith(
+            expect.objectContaining({ nameError: undefined }),
+            undefined,
+          );
         });
       });
     });
 
     describe('and the name is provided', () => {
-      beforeEach(() => {
+      it('calls onSave with the game data', async () => {
         (GeneralTabModule.GeneralTab as jest.Mock).mockImplementation(({ onNameChanged }) => {
           React.useEffect(() => {
             onNameChanged('Test Game');
@@ -378,9 +323,6 @@ describe('GameModal tests', () => {
         });
 
         render(<GameModal {...defaultProps} visible={true} />);
-      });
-
-      it('calls onSave', async () => {
         fireEvent.press(screen.getByTestId('confirm-button'));
 
         await waitFor(() => {
