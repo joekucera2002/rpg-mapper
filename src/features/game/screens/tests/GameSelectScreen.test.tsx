@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { GameSelectScreen } from '../GameSelectScreen';
 import { GameStore, useGameStore } from '../../../../store/gameStore';
-import { Game, GameData } from '../../types/game';
+import { Game, GameData } from '../../../../types/game';
 import * as GameModalModule from '../../components/GameModal/GameModal';
 import * as GameSelectGridModule from '../../components/GameSelectGrid/GameSelectGrid';
 import { GAME_COLORS } from '../../../../constants';

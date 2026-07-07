@@ -3,7 +3,7 @@ import { TopBar } from '../components/TopBar/TopBar';
 import { GameSelectGrid } from '../components/GameSelectGrid/GameSelectGrid';
 import { useGameStore } from '../../../store/gameStore';
 import { GameModal } from '../components/GameModal/GameModal';
-import { Game, GameData } from '../types/game';
+import { Game, GameData } from '../../../types/game';
 import { GameModalProps } from '../components/GameModal/GameModal.types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';

@@ -1,4 +1,4 @@
-import { Game, GameData } from '../../types/game';
+import { Game, GameData } from '../../../../types/game';
 
 export type GameModalProps = {
   game: Game | null;

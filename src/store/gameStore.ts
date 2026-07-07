@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Game, GameData } from '../features/game/types/game';
+import { Game, GameData } from '../types/game';
 import { GameModel } from '../data/models/GameModel';
 import { database } from '../data/database';
 

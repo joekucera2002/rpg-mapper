@@ -1,4 +1,4 @@
-import { Game } from '../../../game/types/game';
+import { Game } from '../../../../types/game';
 
 export type MapEditorTopBarProps = {
   game: Game | null;

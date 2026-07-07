@@ -1,6 +1,6 @@
 import { useGameStore } from '../gameStore';
 import { database } from '../../data/database';
-import { GameData } from '../../features/game/types/game';
+import { GameData } from '../../types/game';
 import { createGame } from '../../testutils/gameFactory';
 
 jest.mock('../../data/database', () => {

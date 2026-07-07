@@ -1,5 +1,5 @@
 import { GAME_COLORS } from '../constants';
-import { Game } from '../features/game/types/game';
+import { Game } from '../types/game';
 
 let idCounter = 1;
 
