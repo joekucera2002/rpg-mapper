@@ -1,13 +1,15 @@
 import { act } from 'react';
 import { View } from 'react-native';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 import { GameSelectScreen } from '../GameSelectScreen';
 import { GameStore, useGameStore } from '../../../../store/gameStore';
-import { Game, GameData } from '../../../../types/game';
+import * as TopBarModule from '../../components/TopBar/TopBar';
 import * as GameModalModule from '../../components/GameModal/GameModal';
 import * as GameSelectGridModule from '../../components/GameSelectGrid/GameSelectGrid';
-import { GAME_COLORS } from '../../../../constants';
 import { createGame } from '../../../../testutils/gameFactory';
+import { GameModalProps } from '../../components/GameModal/GameModal.types';
+import { GameSelectGridProps } from '../../components/GameSelectGrid/GameSelectGrid.types';
+import { TopBarProps } from '../../components/TopBar/TopBar.types';
 
 const mockAddGame = jest.fn();
 const mockUpdateGame = jest.fn();
@@ -31,6 +33,7 @@ jest.mock('../../../../data/database', () => ({
 }));
 
 jest.mock('../../../../store/gameStore');
+jest.spyOn(TopBarModule, 'TopBar');
 jest.spyOn(GameModalModule, 'GameModal');
 jest.spyOn(GameSelectGridModule, 'GameSelectGrid');
 
@@ -45,206 +48,186 @@ beforeEach(() => {
 });
 
 function renderScreen() {
-  let onCancel!: () => void;
-  let onSave!: (data: GameData) => void;
-  let onDelete!: (id: string) => void;
-  let onEditGame!: (game: Game) => void;
-  let onSelectGame!: (game: Game) => void;
+  let capturedTopBarProps: TopBarProps;
+  let capturedGameModalProps: GameModalProps;
+  let capturedGameSelectGridProps: GameSelectGridProps;
 
-  (GameModalModule.GameModal as jest.Mock).mockImplementation(
-    ({ onCancel: c, onSave: s, onDelete: d, visible }) => {
-      onCancel = c;
-      onSave = s;
-      onDelete = d;
-      return visible ? <View testID="game-modal" /> : null;
-    },
-  );
+  (TopBarModule.TopBar as jest.Mock).mockImplementation((props: TopBarProps) => {
+    capturedTopBarProps = props;
+    return <View testID="top-bar" />;
+  });
+  (GameModalModule.GameModal as jest.Mock).mockImplementation((props: GameModalProps) => {
+    capturedGameModalProps = props;
+    return <View testID="game-modal" />;
+  });
 
-  (GameSelectGridModule.GameSelectGrid as jest.Mock).mockImplementation(
-    ({ onEditGame: e, onSelectGame: sel }) => {
-      onEditGame = e;
-      onSelectGame = sel;
-      return <View testID="game-grid" />;
-    },
-  );
+  (GameSelectGridModule.GameSelectGrid as jest.Mock).mockImplementation((props) => {
+    capturedGameSelectGridProps = props;
+    return <View testID="game-grid" />;
+  });
 
   render(<GameSelectScreen />);
 
   return {
-    get onCancel() {
-      return onCancel;
+    get topBarProps() {
+      return capturedTopBarProps;
     },
-    get onSave() {
-      return onSave;
+    get gameModalProps() {
+      return capturedGameModalProps;
     },
-    get onDelete() {
-      return onDelete;
-    },
-    get onEditGame() {
-      return onEditGame;
-    },
-    get onSelectGame() {
-      return onSelectGame;
+    get gameSelectGridProps() {
+      return capturedGameSelectGridProps;
     },
   };
 }
 
 describe('GameSelectScreen', () => {
-  describe('initial state', () => {
-    it('renders the TopBar', () => {
+  describe('TopBar', () => {
+    it('is rendered', () => {
       renderScreen();
       expect(screen.getByTestId('top-bar')).toBeTruthy();
     });
 
-    it('renders the GameSelectGrid', () => {
+    describe('events', () => {
+      describe('onNewGame', () => {
+        it('renders GameModal when handled', async () => {
+          const s = renderScreen();
+          await act(async () => {
+            s.topBarProps.onNewGame();
+          });
+          expect(screen.getByTestId('game-modal')).toBeTruthy();
+          expect(s.gameModalProps.game).toBeNull();
+        });
+      });
+    });
+  });
+
+  describe('GameSelectGrid', () => {
+    it('is rendered', () => {
       renderScreen();
       expect(screen.getByTestId('game-grid')).toBeTruthy();
     });
 
-    it('GameModal is not visible', () => {
+    describe('events', () => {
+      describe('onEditGame', () => {
+        it('shows the GameModal', async () => {
+          const s = renderScreen();
+          const game = createGame();
+          await act(async () => {
+            s.gameSelectGridProps.onEditGame(game);
+          });
+          expect(screen.getByTestId('top-bar')).toBeTruthy();
+          expect(s.gameModalProps.game).toBe(game);
+        });
+      });
+
+      describe('onSelectGame', () => {
+        it('navigates to MapEditor with the gameId', async () => {
+          const game = createGame();
+          const s = renderScreen();
+          await act(async () => {
+            s.gameSelectGridProps.onSelectGame(game);
+          });
+          expect(mockNavigation.navigate).toHaveBeenCalledWith('MapEditor', { gameId: game.id });
+        });
+      });
+    });
+  });
+
+  describe('GameModal', () => {
+    it('is not rendered on screen load', () => {
       renderScreen();
       expect(screen.queryByTestId('game-modal')).toBeNull();
     });
-  });
 
-  describe('when adding a game', () => {
-    it('shows the GameModal when new game button is pressed', async () => {
-      renderScreen();
-      fireEvent.press(screen.getByTestId('newgame-button'));
-      await waitFor(() => {
-        expect(screen.getByTestId('game-modal')).toBeTruthy();
-      });
-    });
+    describe('events', () => {
+      describe('onCancel', () => {
+        it('hides the GameModal', async () => {
+          const s = renderScreen();
+          await act(async () => {
+            s.topBarProps.onNewGame();
+          });
+          await act(async () => {
+            s.gameModalProps.onCancel();
+          });
+          expect(screen.queryByTestId('game-modal')).toBeNull();
+        });
 
-    it('hides the GameModal when cancelled', async () => {
-      const s = renderScreen();
-      fireEvent.press(screen.getByTestId('newgame-button'));
-      await act(async () => {
-        s.onCancel();
-      });
-      await waitFor(() => {
-        expect(screen.queryByTestId('game-modal')).toBeNull();
-      });
-    });
+        it('does not call addGame', async () => {
+          const s = renderScreen();
+          await act(async () => {
+            s.topBarProps.onNewGame();
+          });
+          await act(async () => {
+            s.gameModalProps.onCancel();
+          });
+          expect(mockAddGame).not.toHaveBeenCalled();
+        });
 
-    it('does not call addGame when cancelled', async () => {
-      const s = renderScreen();
-      fireEvent.press(screen.getByTestId('newgame-button'));
-      await act(async () => {
-        s.onCancel();
+        it('does not call updateGame', async () => {
+          const s = renderScreen();
+          const game = createGame();
+          await act(async () => {
+            s.gameSelectGridProps.onEditGame(game);
+          });
+          await act(async () => {
+            s.gameModalProps.onCancel();
+          });
+          expect(mockUpdateGame).not.toHaveBeenCalled();
+        });
       });
-      expect(mockAddGame).not.toHaveBeenCalled();
-    });
 
-    it('calls addGame with the game data when saved', async () => {
-      const newGame: GameData = { name: 'New Game', color: GAME_COLORS[3], image: null };
-      const s = renderScreen();
-      fireEvent.press(screen.getByTestId('newgame-button'));
-      await act(async () => {
-        s.onSave(newGame);
-      });
-      expect(mockAddGame).toHaveBeenCalledWith(newGame);
-    });
+      describe('onSave', () => {
+        it('is called with new game data', async () => {
+          const game = createGame();
+          const s = renderScreen();
+          await act(async () => {
+            s.topBarProps.onNewGame();
+          });
+          await act(async () => {
+            s.gameModalProps.onSave(game);
+          });
+          expect(mockAddGame).toHaveBeenCalledWith(game);
+        });
 
-    it('closes the GameModal when saved', async () => {
-      const newGame: GameData = { name: 'New Game', color: GAME_COLORS[3], image: null };
-      const s = renderScreen();
-      fireEvent.press(screen.getByTestId('newgame-button'));
-      await act(async () => {
-        s.onSave(newGame);
-      });
-      expect(GameModalModule.GameModal).toHaveBeenLastCalledWith(
-        expect.objectContaining({ visible: false }),
-        undefined,
-      );
-    });
-  });
+        it('is called with edit game data', async () => {
+          const game = createGame();
+          const s = renderScreen();
+          await act(async () => {
+            s.gameSelectGridProps.onEditGame(game);
+          });
+          await act(async () => {
+            s.gameModalProps.onSave(game);
+          });
+          expect(mockUpdateGame).toHaveBeenCalledWith(game.id, game);
+        });
 
-  describe('when editing a game', () => {
-    const game = createGame();
+        it('closes modal on save', async () => {
+          const game = createGame();
+          const s = renderScreen();
+          await act(async () => {
+            s.topBarProps.onNewGame();
+          });
+          await act(async () => {
+            s.gameModalProps.onSave(game);
+          });
+          expect(screen.queryByTestId('game-modal')).toBeNull();
+        });
+      });
 
-    it('shows the GameModal when a game is selected for editing', async () => {
-      const s = renderScreen();
-      await act(async () => {
-        s.onEditGame(game);
+      describe('onDelete', () => {
+        it('is called when a game is deleted', async () => {
+          const s = renderScreen();
+          const game = createGame();
+          await act(async () => {
+            s.gameSelectGridProps.onEditGame(game);
+          });
+          await act(async () => {
+            s.gameModalProps.onDelete();
+          });
+          expect(mockDeleteGame).toHaveBeenCalledWith(game.id);
+        });
       });
-      expect(GameModalModule.GameModal).toHaveBeenLastCalledWith(
-        expect.objectContaining({ visible: true }),
-        undefined,
-      );
-    });
-
-    it('hides the GameModal when cancelled', async () => {
-      const s = renderScreen();
-      await act(async () => {
-        s.onEditGame(game);
-      });
-      await act(async () => {
-        s.onCancel();
-      });
-      await waitFor(() => {
-        expect(screen.queryByTestId('game-modal')).toBeNull();
-      });
-    });
-
-    it('does not call updateGame when cancelled', async () => {
-      const s = renderScreen();
-      await act(async () => {
-        s.onEditGame(game);
-      });
-      await act(async () => {
-        s.onCancel();
-      });
-      expect(mockUpdateGame).not.toHaveBeenCalled();
-    });
-
-    it('calls updateGame with the game id and data when saved', async () => {
-      const editedGame = createGame();
-      const s = renderScreen();
-      await act(async () => {
-        s.onEditGame(game);
-      });
-      await act(async () => {
-        s.onSave(editedGame);
-      });
-      expect(mockUpdateGame).toHaveBeenCalledWith(game.id, editedGame);
-    });
-
-    it('closes the GameModal when saved', async () => {
-      const editedGame = createGame();
-      const s = renderScreen();
-      await act(async () => {
-        s.onEditGame(game);
-      });
-      await act(async () => {
-        s.onSave(editedGame);
-      });
-      expect(GameModalModule.GameModal).toHaveBeenLastCalledWith(
-        expect.objectContaining({ visible: false }),
-        undefined,
-      );
-    });
-
-    it('calls deleteGame when a game is deleted', async () => {
-      const s = renderScreen();
-      await act(async () => {
-        s.onEditGame(game);
-      });
-      await act(async () => {
-        s.onDelete('Game1');
-      });
-      expect(mockDeleteGame).toHaveBeenCalledWith(game.id);
-    });
-  });
-
-  describe('when selecting a game', () => {
-    it('navigates to MapEditor with the gameId', async () => {
-      const game = createGame();
-      const s = renderScreen();
-      await act(async () => {
-        s.onSelectGame(game);
-      });
-      expect(mockNavigation.navigate).toHaveBeenCalledWith('MapEditor', { gameId: game.id });
     });
   });
 });

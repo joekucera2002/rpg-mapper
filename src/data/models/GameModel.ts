@@ -7,6 +7,7 @@ export class GameModel extends Model {
   @field('name') name!: string;
   @field('color') color!: string;
   @field('image') image!: string | null;
+  @field('rules') rules!: string;
   @field('last_updated') lastUpdated!: number;
   @field('created_at') createdAt!: number;
 }

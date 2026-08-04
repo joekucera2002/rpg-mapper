@@ -36,8 +36,8 @@ describe('gameStore tests', () => {
       beforeEach(async () => {
         const { addGame, loadGames } = useGameStore.getState();
 
-        await addGame({ name: 'Game 1', color: 'Color 1', image: null });
-        await addGame({ name: 'Game 2', color: 'Color 1', image: null });
+        await addGame(createGame());
+        await addGame(createGame());
 
         await loadGames();
       });
@@ -51,10 +51,12 @@ describe('gameStore tests', () => {
 
   describe('addGame', () => {
     describe('when adding a game', () => {
+      const game = createGame();
+
       beforeEach(async () => {
         const { addGame, loadGames } = useGameStore.getState();
 
-        await addGame({ name: 'Game 1', color: 'Color 1', image: 'Image 1' });
+        await addGame(game);
         await loadGames();
       });
 
@@ -67,19 +69,25 @@ describe('gameStore tests', () => {
       it('inserts the name in the record', () => {
         const { games } = useGameStore.getState();
 
-        expect(games[0].name).toBe('Game 1');
+        expect(games[0].name).toBe(game.name);
       });
 
       it('inserts the color in the record', () => {
         const { games } = useGameStore.getState();
 
-        expect(games[0].color).toBe('Color 1');
+        expect(games[0].color).toBe(game.color);
       });
 
       it('inserts the image in the record', () => {
         const { games } = useGameStore.getState();
 
-        expect(games[0].image).toBe('Image 1');
+        expect(games[0].image).toBe(game.image);
+      });
+
+      it('inserts the rules in the record', () => {
+        const { games } = useGameStore.getState();
+
+        expect(games[0].rules).toStrictEqual(game.rules);
       });
 
       it('inserts the createdAt in the record', () => {
@@ -102,6 +110,11 @@ describe('gameStore tests', () => {
       name: 'Game 1 Change',
       color: 'Color 1 Change',
       image: 'Image 1 Change',
+      rules: {
+        effects: ['HP Drain'],
+        markers: ['Review Board'],
+        walls: ['Secret Door'],
+      },
     };
 
     beforeEach(async () => {
@@ -135,6 +148,12 @@ describe('gameStore tests', () => {
         const { games } = useGameStore.getState();
 
         expect(games[0].image).toBe(data.image);
+      });
+
+      it('updates the rules in the record', () => {
+        const { games } = useGameStore.getState();
+
+        expect(games[0].rules).toStrictEqual(data.rules);
       });
 
       it('updates the lastUpdated in the record', () => {

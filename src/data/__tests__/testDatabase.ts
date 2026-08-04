@@ -3,6 +3,8 @@ import LokiJSAdapter from '@nozbe/watermelondb/adapters/lokijs';
 import { schema } from '../schema';
 import { GameModel } from '../models/GameModel';
 import { logger } from '@nozbe/watermelondb/utils/common';
+import { AreaModel } from '../models/AreaModel';
+import { MapModel } from '../models/MapModel';
 
 logger.silence();
 
@@ -15,6 +17,6 @@ export function createTestDatabase() {
 
   return new Database({
     adapter,
-    modelClasses: [GameModel],
+    modelClasses: [GameModel, AreaModel, MapModel],
   });
 }

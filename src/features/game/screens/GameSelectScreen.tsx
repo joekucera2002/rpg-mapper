@@ -64,7 +64,6 @@ export function GameSelectScreen() {
 
   const modalProps: GameModalProps = {
     game: gameInEdit,
-    visible: isModalVisible,
     onCancel: handleOnCancel,
     onSave: handleOnSave,
     onDelete: handleOnDelete,
@@ -81,7 +80,7 @@ export function GameSelectScreen() {
         />
       </SafeAreaView>
 
-      <GameModal {...modalProps} key={gameInEdit?.id ?? 'closed'} />
+      {isModalVisible && <GameModal {...modalProps} key={gameInEdit?.id ?? 'closed'} />}
     </>
   );
 }

@@ -21,6 +21,11 @@ export function createGame(overrides: Partial<Game> = {}): Game {
     name: `Test Game ${id}`,
     color: GAME_COLORS[2],
     image: 'file://image.jpg',
+    rules: {
+      effects: ['Trap', 'Darkness'],
+      markers: ['Shop', 'Guild'],
+      walls: ['Wall', 'Door'],
+    },
     createdAt: createdAt.getTime(),
     lastUpdated: lastUpdated.getTime(),
     ...overrides,

@@ -10,21 +10,33 @@ import {
 import { GameModalProps } from './GameModal.types';
 import { colors, GAME_COLORS } from '../../../../constants';
 import { TabBar } from '../../../../components/common/TabBar';
-import { Tab } from '../../../../components/common/TabBar.types';
+import { Tab, TabBarProps } from '../../../../components/common/TabBar.types';
 import { useState } from 'react';
 import { GeneralTab } from './GeneralTab';
 import { GeneralTabProps } from './GeneralTab.types';
+import { RulesTabProps } from './RulesTab.types';
+import { RulesTab } from './RulesTab';
 
-export function GameModal({ game, visible, onCancel, onSave, onDelete }: GameModalProps) {
-  const TABS: Tab[] = [{ key: 'general', label: 'General' }];
+export function GameModal({ game, onCancel, onSave, onDelete }: GameModalProps) {
+  const TABS: Tab[] = [
+    { key: 'general', label: 'General' },
+    { key: 'rules', label: 'Rules' },
+  ];
   const isEditMode = !!game;
 
-  const [activeTab, setActiveTab] = useState<string>(TABS[0].key);
+  // Component state
+  const [activeTab, setActiveTab] = useState<string>('general');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Game state
   const [name, setName] = useState<string>(game?.name ?? '');
   const [image, setImage] = useState<string | null>(game?.image ?? null);
   const [color, setColor] = useState<string>(game?.color ?? GAME_COLORS[0]);
+  const [effects, setEffects] = useState<string[]>(game?.rules?.effects ?? []);
+  const [markers, setMarkers] = useState<string[]>(game?.rules?.markers ?? []);
+  const [walls, setWalls] = useState<string[]>(game?.rules?.walls ?? []);
 
+  // Event Handlers
   function handleNameChanged(value: string) {
     setName(value);
     if (errors.name) {
@@ -34,29 +46,15 @@ export function GameModal({ game, visible, onCancel, onSave, onDelete }: GameMod
       });
     }
   }
-
   function handleImageChanged(value: string | null) {
     setImage(value);
   }
-
   function handleColorChanged(value: string) {
     setColor(value);
   }
-
   function handleOnTabChange(key: string) {
     setActiveTab(key);
   }
-
-  function validate(): boolean {
-    const newErrors: Record<string, string> = {};
-
-    if (!name.trim()) newErrors.name = 'Name is required';
-
-    setErrors(newErrors);
-
-    return Object.keys(newErrors).length === 0;
-  }
-
   function handleOnConfirm() {
     if (!validate()) {
       setActiveTab('general');
@@ -67,10 +65,32 @@ export function GameModal({ game, visible, onCancel, onSave, onDelete }: GameMod
       name: name,
       color: color,
       image: image,
+      rules: {
+        effects: effects,
+        markers: markers,
+        walls: walls,
+      },
     });
   }
 
-  const basicsTabProps: GeneralTabProps = {
+  // functions
+  function validate(): boolean {
+    const newErrors: Record<string, string> = {};
+
+    if (!name.trim()) newErrors.name = 'Name is required';
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  }
+
+  const tabBarProps: TabBarProps = {
+    tabs: TABS,
+    activeTab: activeTab,
+    onTabChange: handleOnTabChange,
+  };
+
+  const generalTabProps: GeneralTabProps = {
     name: name,
     image: image,
     color: color,
@@ -82,15 +102,23 @@ export function GameModal({ game, visible, onCancel, onSave, onDelete }: GameMod
     isEditMode: isEditMode,
   };
 
+  const rulesTabProps: RulesTabProps = {
+    effects: effects,
+    markers: markers,
+    walls: walls,
+    onEffectsChanged: setEffects,
+    onMarkersChanged: setMarkers,
+    onWallsChanged: setWalls,
+  };
+
   return (
     <Modal
-      visible={visible}
       transparent
       animationType="fade"
       supportedOrientations={['landscape', 'landscape-left', 'landscape-right']}
       testID="game-modal"
     >
-      <Pressable style={styles.backdrop} onPress={onCancel}>
+      <Pressable style={styles.backdrop} onPress={onCancel} testID="gamemodal-backdrop">
         <Pressable style={styles.modal}>
           {/* Header */}
           <View style={styles.header}>
@@ -100,10 +128,11 @@ export function GameModal({ game, visible, onCancel, onSave, onDelete }: GameMod
           </View>
 
           {/* Tabs */}
-          <TabBar tabs={TABS} activeTab={activeTab} onTabChange={handleOnTabChange} />
+          <TabBar {...tabBarProps} />
 
           <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-            {activeTab === TABS[0].key && <GeneralTab {...basicsTabProps} />}
+            {activeTab === 'general' && <GeneralTab {...generalTabProps} />}
+            {activeTab === 'rules' && <RulesTab {...rulesTabProps} />}
           </ScrollView>
 
           {/* Footer */}
