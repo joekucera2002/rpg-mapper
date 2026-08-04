@@ -127,7 +127,7 @@ export function RulesTab({
         <Text style={styles.sectionLabel}>Wall Types</Text>
         <Text style={styles.hint}>Select the types available to be used in this game</Text>
         <View style={styles.wallChips}>
-          {WALL_TYPES.map((w) => (
+          {WALL_TYPES.map((w: string) => (
             <TouchableOpacity
               key={w}
               style={[styles.wallChip, walls.includes(w) && styles.wallChipOn]}

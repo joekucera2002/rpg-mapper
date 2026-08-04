@@ -221,7 +221,7 @@ describe('Rules Tab', () => {
   describe('walls', () => {
     it('renders wall chips', () => {
       renderComponent();
-      WALL_TYPES.map((w) => {
+      WALL_TYPES.map((w: string) => {
         expect(screen.getByTestId(`wall-chip-${w}`)).toBeTruthy();
       });
     });
