@@ -7,6 +7,7 @@ export function createArea(overrides: Partial<Area> = {}): Area {
 
   return {
     id: String(id),
+    gameId: '1001',
     parentAreaId: null,
     name: `Area ${id}`,
     isOpen: false,
