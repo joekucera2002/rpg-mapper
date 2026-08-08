@@ -12,35 +12,40 @@ beforeEach(() => {
   };
 });
 
+function renderComponent(overrides: Partial<MapEditorTopBarProps> = {}) {
+  const props = {
+    ...defaultProps,
+    ...overrides,
+  };
+
+  render(<MapEditorTopBar {...props} />);
+}
+
 describe('MapEditorTopBar', () => {
   it('renders without crashing', () => {
-    expect(() => render(<MapEditorTopBar {...defaultProps} />)).not.toThrow();
+    expect(() => renderComponent()).not.toThrow();
   });
 
-  describe('when game is null', () => {
-    it('does not render the game chip', () => {
-      render(<MapEditorTopBar {...defaultProps} game={null} />);
-      expect(screen.queryByTestId('game-chip')).toBeNull();
+  it('does not render the game chip when game is null', () => {
+    renderComponent({ game: null });
+    expect(screen.queryByTestId('game-chip')).toBeNull();
+  });
+
+  it('sets the game color on the dot', () => {
+    renderComponent();
+    expect(screen.getByTestId('game-dot')).toHaveStyle({
+      backgroundColor: defaultProps.game?.color,
     });
   });
 
-  describe('when game is provided', () => {
-    it('sets the game color on the dot', () => {
-      render(<MapEditorTopBar {...defaultProps} />);
-      expect(screen.getByTestId('game-dot')).toHaveStyle({
-        backgroundColor: defaultProps.game?.color,
-      });
-    });
-
-    it('displays the game name', () => {
-      render(<MapEditorTopBar {...defaultProps} />);
-      expect(screen.getByTestId('gamename-text').props.children).toBe(defaultProps.game?.name);
-    });
+  it('displays the game name', () => {
+    renderComponent();
+    expect(screen.getByTestId('gamename-text').props.children).toBe(defaultProps.game?.name);
   });
 
-  describe('when the back button is pressed', () => {
-    it('calls onBack', async () => {
-      render(<MapEditorTopBar {...defaultProps} />);
+  describe('events', () => {
+    it('onBack', async () => {
+      renderComponent();
       fireEvent.press(screen.getByTestId('back-button'));
       await waitFor(() => {
         expect(defaultProps.onBack).toHaveBeenCalledTimes(1);

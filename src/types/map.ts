@@ -11,6 +11,7 @@ export type CoordinateSystem = {
 
 export type Map = {
   id: string;
+  gameId: string;
   areaId: string;
   name: string;
   type: string;

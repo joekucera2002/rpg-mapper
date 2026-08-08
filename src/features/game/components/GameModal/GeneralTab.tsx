@@ -96,12 +96,12 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#2a1414',
+    borderColor: '#CC4444',
     alignItems: 'center',
   },
   deleteBtnText: {
     fontSize: 13,
-    color: '#955',
+    color: '#e87070',
   },
   deleteZone: {
     paddingTop: 14,
