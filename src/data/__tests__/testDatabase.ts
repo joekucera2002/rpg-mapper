@@ -5,6 +5,7 @@ import { GameModel } from '../models/GameModel';
 import { logger } from '@nozbe/watermelondb/utils/common';
 import { AreaModel } from '../models/AreaModel';
 import { MapModel } from '../models/MapModel';
+import { CellModel } from '../models/CellModel';
 
 logger.silence();
 
@@ -17,6 +18,6 @@ export function createTestDatabase() {
 
   return new Database({
     adapter,
-    modelClasses: [GameModel, AreaModel, MapModel],
+    modelClasses: [GameModel, AreaModel, MapModel, CellModel],
   });
 }

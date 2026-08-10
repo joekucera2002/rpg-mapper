@@ -2,6 +2,7 @@ import { act, render, screen } from '@testing-library/react-native';
 import { MapEditorScreen } from '../MapEditorScreen';
 import * as MapEditorTopBarModule from '../../components/MapEditorTopBar/MapEditorTopBar';
 import * as MapEditorSidebarModule from '../../components/MapEditorSidebar/MapEditorSidebar';
+import * as MapEditorCanvasModule from '../../components/MapEditorCanvas/MapEditorCanvas';
 import * as AreaModalModule from '../../components/AreaModal/AreaModal';
 import * as MapModalModule from '../../components/MapModal/MapModal';
 import { View } from 'react-native';
@@ -16,6 +17,7 @@ import { createArea, createAreas } from '../../../../testutils/areaFactory';
 import { MapModalProps } from '../../components/MapModal/MapModal.types';
 import { Game } from '../../../../types/game';
 import { createMap, createMaps } from '../../../../testutils/mapFactory';
+import { MapEditorCanvasProps } from '../../components/MapEditorCanvas/MapEditorCanvas.types';
 
 const game = createGame();
 const areas = createAreas(2, { gameId: game.id });
@@ -51,6 +53,7 @@ jest.mock('../../../../store/gameStore');
 jest.mock('../../../../store/mapStore');
 jest.spyOn(MapEditorTopBarModule, 'MapEditorTopBar');
 jest.spyOn(MapEditorSidebarModule, 'MapEditorSidebar');
+jest.spyOn(MapEditorCanvasModule, 'MapEditorCanvas');
 jest.spyOn(AreaModalModule, 'AreaModal');
 jest.spyOn(MapModalModule, 'MapModal');
 
@@ -59,6 +62,7 @@ function renderScreen({ games = [game] }: { games?: Game[] } = {}) {
   let capturedSidebarProps!: MapEditorSidebarProps;
   let capturedAreaModalProps!: AreaModalProps;
   let capturedMapModalProps!: MapModalProps;
+  let capturedMapEditorCanvasProps!: MapEditorCanvasProps;
 
   (MapEditorTopBarModule.MapEditorTopBar as jest.Mock).mockImplementation(
     (props: MapEditorTopBarProps) => {
@@ -71,6 +75,13 @@ function renderScreen({ games = [game] }: { games?: Game[] } = {}) {
     (props: MapEditorSidebarProps) => {
       capturedSidebarProps = props;
       return <View testID="sidebar" />;
+    },
+  );
+
+  (MapEditorCanvasModule.MapEditorCanvas as jest.Mock).mockImplementation(
+    (props: MapEditorCanvasProps) => {
+      capturedMapEditorCanvasProps = props;
+      return <View testID="canvas" />;
     },
   );
 
@@ -114,6 +125,9 @@ function renderScreen({ games = [game] }: { games?: Game[] } = {}) {
     },
     get sidebarProps() {
       return capturedSidebarProps;
+    },
+    get canvasProps() {
+      return capturedMapEditorCanvasProps;
     },
     get areaModalProps() {
       return capturedAreaModalProps;
@@ -284,6 +298,18 @@ describe('MapEditorScreen', () => {
           expect(mockSetActiveMap).toHaveBeenCalledWith('Map1');
         });
       });
+    });
+  });
+
+  describe('MapEditorCanvas', () => {
+    it('passes game', () => {
+      const s = renderScreen();
+      expect(s.canvasProps.game).toBe(game);
+    });
+
+    it('passes the active map', () => {
+      const s = renderScreen();
+      expect(s.canvasProps.activeMap).toBe(maps[1]);
     });
   });
 

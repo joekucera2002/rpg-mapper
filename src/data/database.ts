@@ -5,6 +5,7 @@ import { Database } from '@nozbe/watermelondb';
 import { GameModel } from './models/GameModel';
 import { AreaModel } from './models/AreaModel';
 import { MapModel } from './models/MapModel';
+import { CellModel } from './models/CellModel';
 
 const adapter = new SQLiteAdapter({
   schema,
@@ -17,5 +18,5 @@ const adapter = new SQLiteAdapter({
 
 export const database = new Database({
   adapter,
-  modelClasses: [GameModel, AreaModel, MapModel],
+  modelClasses: [GameModel, AreaModel, MapModel, CellModel],
 });

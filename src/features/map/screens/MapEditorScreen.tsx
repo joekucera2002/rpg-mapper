@@ -1,29 +1,30 @@
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useEffect, useState } from 'react';
 import { colors } from '../../../constants';
 import { MapEditorTopBar } from '../components/MapEditorTopBar/MapEditorTopBar';
 import { MapEditorTopBarProps } from '../components/MapEditorTopBar/MapEditorTopBar.types';
 import { MapEditorScreenProps } from '../../../navigation/types';
 import { useGameStore } from '../../../store/gameStore';
-import { MapEditorSidebar } from '../components/MapEditorSidebar/MapEditorSidebar';
-import { MapEditorCanvas } from '../components/MapEditorCanvas/MapEditorCanvas';
-import { MapEditorSidebarProps } from '../components/MapEditorSidebar/MapEditorSidebar.types';
-import { AreaModal } from '../components/AreaModal/AreaModal';
-import { useEffect, useState } from 'react';
-import { AreaModalProps } from '../components/AreaModal/AreaModal.types';
-import { Area, AreaData } from '../../../types/area';
 import { useMapStore } from '../../../store/mapStore';
+import { useCellStore } from '../../../store/cellStore';
+import { MapEditorSidebar } from '../components/MapEditorSidebar/MapEditorSidebar';
+import { MapEditorSidebarProps } from '../components/MapEditorSidebar/MapEditorSidebar.types';
+import { MapEditorCanvas } from '../components/MapEditorCanvas/MapEditorCanvas';
+import { AreaModal } from '../components/AreaModal/AreaModal';
+import { AreaModalProps } from '../components/AreaModal/AreaModal.types';
 import { MapModal } from '../components/MapModal/MapModal';
-import { Map, MapData } from '../../../types/map';
 import { MapModalProps } from '../components/MapModal/MapModal.types';
+import { Area, AreaData } from '../../../types/area';
+import { Map, MapData } from '../../../types/map';
 
 export function MapEditorScreen() {
   const navigation = useNavigation<MapEditorScreenProps['navigation']>();
   const route = useRoute<MapEditorScreenProps['route']>();
   const { gameId } = route.params;
 
-  // Store
+  // Stores
   const games = useGameStore((s) => s.games);
   const game = games.find((g) => g.id === gameId) ?? null;
 
@@ -40,48 +41,35 @@ export function MapEditorScreen() {
   const deleteMap = useMapStore((s) => s.deleteMap);
   const setActiveMap = useMapStore((s) => s.setActiveMap);
 
-  // AreaModal State
+  // Derived
+  const activeMap = maps.find((m) => m.id === activeMapId) ?? null;
+
+  // Area modal state
   const [areaInEdit, setAreaInEdit] = useState<Area | null>(null);
   const [isAreaModalVisible, setIsAreaModalVisible] = useState(false);
   const [areaModalParentId, setAreaModalParentId] = useState<string | null>(null);
 
-  // MapModal State
+  // Map modal state
   const [mapInEdit, setMapInEdit] = useState<Map | null>(null);
   const [mapModalAreaId, setMapModalAreaId] = useState<string>('');
   const [isMapModalVisible, setIsMapModalVisible] = useState(false);
 
-  // Hooks
   useEffect(() => {
     void loadAreasAndMaps(gameId);
   }, [gameId, loadAreasAndMaps]);
 
-  // Event handlers
-  function handleOnBack() {
-    navigation.goBack();
-  }
-  function handleOnNewArea(areaId: string | null) {
+  // Area handlers
+  function handleOnNewArea(parentAreaId: string | null) {
     setAreaInEdit(null);
-    setAreaModalParentId(areaId);
+    setAreaModalParentId(parentAreaId);
     setIsAreaModalVisible(true);
   }
-  function handleOnNewMap(areaId: string) {
-    setMapModalAreaId(areaId);
-    setMapInEdit(null);
-    setIsMapModalVisible(true);
-  }
-  function handleOnEditMap(map: Map) {
-    setMapInEdit(map);
-    setMapModalAreaId('');
-    setIsMapModalVisible(true);
-  }
-  async function handleOnDeleteArea() {
-    if (areaInEdit) await deleteArea(areaInEdit.id);
-    setIsAreaModalVisible(false);
-  }
-  function handleOnEditArea(data: Area) {
-    setAreaInEdit(data);
+
+  function handleOnEditArea(area: Area) {
+    setAreaInEdit(area);
     setIsAreaModalVisible(true);
   }
+
   async function handleOnSaveArea(data: AreaData) {
     if (areaInEdit) {
       await updateArea(areaInEdit.id, data);
@@ -90,9 +78,29 @@ export function MapEditorScreen() {
     }
     setIsAreaModalVisible(false);
   }
-  async function handleOnToggleArea(data: Area) {
-    await toggleAreaOpen(data.id);
+
+  async function handleOnDeleteArea() {
+    if (areaInEdit) await deleteArea(areaInEdit.id);
+    setIsAreaModalVisible(false);
   }
+
+  async function handleOnToggleArea(area: Area) {
+    await toggleAreaOpen(area.id);
+  }
+
+  // Map handlers
+  function handleOnNewMap(areaId: string) {
+    setMapInEdit(null);
+    setMapModalAreaId(areaId);
+    setIsMapModalVisible(true);
+  }
+
+  function handleOnEditMap(map: Map) {
+    setMapInEdit(map);
+    setMapModalAreaId('');
+    setIsMapModalVisible(true);
+  }
+
   async function handleOnSaveMap(data: MapData) {
     if (mapInEdit) {
       await updateMap(mapInEdit.id, data);
@@ -101,54 +109,59 @@ export function MapEditorScreen() {
     }
     setIsMapModalVisible(false);
   }
-  async function handleDeleteMap() {
+
+  async function handleOnDeleteMap() {
     if (mapInEdit) await deleteMap(mapInEdit.id);
     setIsMapModalVisible(false);
   }
-  async function handleOnSelectMap(mapId: string) {
-    setActiveMap(mapId);
-  }
 
-  // Props initialization
+  // Props
   const topBarProps: MapEditorTopBarProps = {
-    game: game,
-    onBack: handleOnBack,
+    game,
+    onBack: () => navigation.goBack(),
   };
+
   const sidebarProps: MapEditorSidebarProps = {
-    areas: areas,
-    maps: maps,
-    activeMapId: activeMapId,
+    areas,
+    maps,
+    activeMapId,
     onNewArea: handleOnNewArea,
     onEditArea: handleOnEditArea,
     onToggleArea: handleOnToggleArea,
     onNewMap: handleOnNewMap,
     onEditMap: handleOnEditMap,
-    onSelectMap: handleOnSelectMap,
+    onSelectMap: setActiveMap,
   };
+
   const areaModalProps: AreaModalProps = {
     area: areaInEdit,
     onCancel: () => setIsAreaModalVisible(false),
-    onSave: (data: AreaData) => handleOnSaveArea(data),
-    onDelete: () => handleOnDeleteArea(),
+    onSave: handleOnSaveArea,
+    onDelete: handleOnDeleteArea,
   };
+
   const mapModalProps: MapModalProps = {
     gameId: game?.id ?? '',
     areaId: mapModalAreaId,
     gameMarkers: game?.rules?.markers ?? [],
     map: mapInEdit,
     onCancel: () => setIsMapModalVisible(false),
-    onSave: (data) => handleOnSaveMap(data),
-    onDelete: () => handleDeleteMap(),
+    onSave: handleOnSaveMap,
+    onDelete: handleOnDeleteMap,
+  };
+
+  const mapEditorCanvasProps = {
+    game: game,
+    activeMap: activeMap,
   };
 
   return (
     <>
       <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
         <MapEditorTopBar {...topBarProps} />
-
         <View style={styles.body}>
           <MapEditorSidebar {...sidebarProps} />
-          <MapEditorCanvas />
+          <MapEditorCanvas {...mapEditorCanvasProps} />
         </View>
       </SafeAreaView>
 

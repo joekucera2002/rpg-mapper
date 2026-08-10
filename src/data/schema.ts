@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const schema = appSchema({
-  version: 4,
+  version: 5,
   tables: [
     tableSchema({
       name: 'games',
@@ -32,6 +32,19 @@ export const schema = appSchema({
         { name: 'type', type: 'string' },
         { name: 'coordinate_system', type: 'string' },
         { name: 'markers', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: 'cells',
+      columns: [
+        { name: 'game_id', type: 'string', isIndexed: true },
+        { name: 'map_id', type: 'string', isIndexed: true },
+        { name: 'x', type: 'number' },
+        { name: 'y', type: 'number' },
+        { name: 'walls', type: 'string' }, // JSON {N,S,E,W}
+        { name: 'marker', type: 'string', isOptional: true },
+        { name: 'effects', type: 'string' }, // JSON array
+        { name: 'description', type: 'string', isOptional: true },
       ],
     }),
   ],

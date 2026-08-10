@@ -52,5 +52,23 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 5,
+      steps: [
+        createTable({
+          name: 'cells',
+          columns: [
+            { name: 'game_id', type: 'string', isIndexed: true },
+            { name: 'map_id', type: 'string', isIndexed: true },
+            { name: 'x', type: 'number' },
+            { name: 'y', type: 'number' },
+            { name: 'walls', type: 'string' },
+            { name: 'marker', type: 'string', isOptional: true },
+            { name: 'effects', type: 'string' },
+            { name: 'description', type: 'string', isOptional: true },
+          ],
+        }),
+      ],
+    },
   ],
 });
