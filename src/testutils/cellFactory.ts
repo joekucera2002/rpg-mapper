@@ -2,7 +2,7 @@ import { Cell } from '../types/cell';
 
 let idCounter: number = 1;
 
-export function createCell(overrides: Partial<Cell> = {}) {
+export function createCell(overrides: Partial<Cell> = {}): Cell {
   return {
     id: String(idCounter++),
     gameId: 'Game1',
@@ -22,6 +22,6 @@ export function createCell(overrides: Partial<Cell> = {}) {
   };
 }
 
-export function createCells(count: number, overrides: Partial<Cell> = {}) {
+export function createCells(count: number, overrides: Partial<Cell> = {}): Cell[] {
   return Array.from({ length: count }, () => createCell(overrides));
 }

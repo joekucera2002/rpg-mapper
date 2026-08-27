@@ -10,6 +10,8 @@ export type Cell = {
   desc: string;
 };
 
+export type CellMap = Record<string, Cell>;
+
 export type CellWalls = {
   N: WallType;
   S: WallType;
