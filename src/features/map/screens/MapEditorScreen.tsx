@@ -8,7 +8,6 @@ import { MapEditorTopBarProps } from '../components/MapEditorTopBar/MapEditorTop
 import { MapEditorScreenProps } from '../../../navigation/types';
 import { useGameStore } from '../../../store/gameStore';
 import { useMapStore } from '../../../store/mapStore';
-import { useCellStore } from '../../../store/cellStore';
 import { MapEditorSidebar } from '../components/MapEditorSidebar/MapEditorSidebar';
 import { MapEditorSidebarProps } from '../components/MapEditorSidebar/MapEditorSidebar.types';
 import { MapEditorCanvas } from '../components/MapEditorCanvas/MapEditorCanvas';

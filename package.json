@@ -36,6 +36,7 @@
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.28.0",
+    "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "zustand": "^5.0.13"
@@ -62,12 +63,17 @@
     "preset": "jest-expo",
     "clearMocks": true,
     "maxWorkers": "50%",
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|@shopify/react-native-skia|@nozbe/watermelondb|react-native-reanimated|react-native-gesture-handler)"
+    ],
     "setupFilesAfterEnv": [
       "@testing-library/jest-native/extend-expect",
-      "react-native-gesture-handler/jestSetup"
+      "react-native-gesture-handler/jestSetup",
+      "<rootDir>/jestSetup.ts"
     ],
     "moduleNameMapper": {
-      "@expo/vector-icons": "<rootDir>/__mocks__/@expo/vector-icons.js"
+      "@expo/vector-icons": "<rootDir>/__mocks__/@expo/vector-icons.js",
+      "@shopify/react-native-skia": "<rootDir>/__mocks__/@shopify/react-native-skia.js"
     },
     "reporters": [
       "default",

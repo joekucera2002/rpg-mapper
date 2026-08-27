@@ -5,3 +5,10 @@ export type MapEditorCanvasProps = {
   game: Game | null;
   activeMap: Map | null;
 };
+
+export type CanvasSize = {
+  width: number;
+  height: number;
+};
+
+export type PanOffset = { x: number; y: number };
