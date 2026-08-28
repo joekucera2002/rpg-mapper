@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
 import { GameSelectScreen } from '../GameSelectScreen';
 import { GameStore, useGameStore } from '../../../../store/gameStore';
+import { useToastStore } from '../../../../store/toastStore';
 import * as TopBarModule from '../../components/TopBar/TopBar';
 import * as GameModalModule from '../../components/GameModal/GameModal';
 import * as GameSelectGridModule from '../../components/GameSelectGrid/GameSelectGrid';
@@ -14,6 +15,7 @@ import { TopBarProps } from '../../components/TopBar/TopBar.types';
 const mockAddGame = jest.fn();
 const mockUpdateGame = jest.fn();
 const mockDeleteGame = jest.fn();
+const mockShowToast = jest.fn();
 
 const mockNavigation = {
   navigate: jest.fn(),
@@ -33,6 +35,7 @@ jest.mock('../../../../data/database', () => ({
 }));
 
 jest.mock('../../../../store/gameStore');
+jest.mock('../../../../store/toastStore');
 jest.spyOn(TopBarModule, 'TopBar');
 jest.spyOn(GameModalModule, 'GameModal');
 jest.spyOn(GameSelectGridModule, 'GameSelectGrid');
@@ -45,6 +48,16 @@ beforeEach(() => {
     deleteGame: mockDeleteGame,
     loadGames: jest.fn(),
   } as unknown as GameStore);
+
+  jest.mocked(useToastStore).mockReturnValue({
+    toasts: [],
+    showToast: mockShowToast,
+    hideToast: jest.fn(),
+  } as unknown as ReturnType<typeof useToastStore>);
+
+  mockAddGame.mockResolvedValue(true);
+  mockUpdateGame.mockResolvedValue(true);
+  mockDeleteGame.mockResolvedValue(true);
 });
 
 function renderScreen() {
@@ -60,7 +73,6 @@ function renderScreen() {
     capturedGameModalProps = props;
     return <View testID="game-modal" />;
   });
-
   (GameSelectGridModule.GameSelectGrid as jest.Mock).mockImplementation((props) => {
     capturedGameSelectGridProps = props;
     return <View testID="game-grid" />;
@@ -178,7 +190,7 @@ describe('GameSelectScreen', () => {
       });
 
       describe('onSave', () => {
-        it('is called with new game data', async () => {
+        it('calls addGame with new game data', async () => {
           const game = createGame();
           const s = renderScreen();
           await act(async () => {
@@ -190,7 +202,7 @@ describe('GameSelectScreen', () => {
           expect(mockAddGame).toHaveBeenCalledWith(game);
         });
 
-        it('is called with edit game data', async () => {
+        it('calls updateGame with edit game data', async () => {
           const game = createGame();
           const s = renderScreen();
           await act(async () => {
@@ -202,7 +214,7 @@ describe('GameSelectScreen', () => {
           expect(mockUpdateGame).toHaveBeenCalledWith(game.id, game);
         });
 
-        it('closes modal on save', async () => {
+        it('closes modal on successful save', async () => {
           const game = createGame();
           const s = renderScreen();
           await act(async () => {
@@ -213,10 +225,68 @@ describe('GameSelectScreen', () => {
           });
           expect(screen.queryByTestId('game-modal')).toBeNull();
         });
+
+        it('keeps modal open when addGame fails', async () => {
+          mockAddGame.mockResolvedValue(false);
+          const game = createGame();
+          const s = renderScreen();
+          await act(async () => {
+            s.topBarProps.onNewGame();
+          });
+          await act(async () => {
+            s.gameModalProps.onSave(game);
+          });
+          expect(screen.getByTestId('game-modal')).toBeTruthy();
+        });
+
+        it('shows error toast when addGame fails', async () => {
+          mockAddGame.mockResolvedValue(false);
+          const game = createGame();
+          const s = renderScreen();
+          await act(async () => {
+            s.topBarProps.onNewGame();
+          });
+          await act(async () => {
+            s.gameModalProps.onSave(game);
+          });
+          expect(mockShowToast).toHaveBeenCalledWith(
+            'Failed to save game. Please try again.',
+            'error',
+          );
+        });
+
+        it('keeps modal open when updateGame fails', async () => {
+          mockUpdateGame.mockResolvedValue(false);
+          const game = createGame();
+          const s = renderScreen();
+          await act(async () => {
+            s.gameSelectGridProps.onEditGame(game);
+          });
+          await act(async () => {
+            s.gameModalProps.onSave(game);
+          });
+          expect(screen.getByTestId('game-modal')).toBeTruthy();
+        });
+
+        it('shows error toast when updateGame fails', async () => {
+          mockUpdateGame.mockResolvedValue(false);
+          const game = createGame();
+          const s = renderScreen();
+          await act(async () => {
+            s.gameSelectGridProps.onEditGame(game);
+          });
+          await act(async () => {
+            s.gameModalProps.onSave(game);
+          });
+          expect(mockShowToast).toHaveBeenCalledWith(
+            'Failed to save game. Please try again.',
+            'error',
+          );
+        });
       });
 
       describe('onDelete', () => {
-        it('is called when a game is deleted', async () => {
+        it('calls deleteGame with the game id', async () => {
           const s = renderScreen();
           const game = createGame();
           await act(async () => {
@@ -226,6 +296,47 @@ describe('GameSelectScreen', () => {
             s.gameModalProps.onDelete();
           });
           expect(mockDeleteGame).toHaveBeenCalledWith(game.id);
+        });
+
+        it('closes modal on successful delete', async () => {
+          const s = renderScreen();
+          const game = createGame();
+          await act(async () => {
+            s.gameSelectGridProps.onEditGame(game);
+          });
+          await act(async () => {
+            s.gameModalProps.onDelete();
+          });
+          expect(screen.queryByTestId('game-modal')).toBeNull();
+        });
+
+        it('keeps modal open when deleteGame fails', async () => {
+          mockDeleteGame.mockResolvedValue(false);
+          const s = renderScreen();
+          const game = createGame();
+          await act(async () => {
+            s.gameSelectGridProps.onEditGame(game);
+          });
+          await act(async () => {
+            s.gameModalProps.onDelete();
+          });
+          expect(screen.getByTestId('game-modal')).toBeTruthy();
+        });
+
+        it('shows error toast when deleteGame fails', async () => {
+          mockDeleteGame.mockResolvedValue(false);
+          const s = renderScreen();
+          const game = createGame();
+          await act(async () => {
+            s.gameSelectGridProps.onEditGame(game);
+          });
+          await act(async () => {
+            s.gameModalProps.onDelete();
+          });
+          expect(mockShowToast).toHaveBeenCalledWith(
+            'Failed to delete game. Please try again.',
+            'error',
+          );
         });
       });
     });

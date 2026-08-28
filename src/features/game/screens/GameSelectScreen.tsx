@@ -11,11 +11,13 @@ import { RootStackParamList } from '../../../navigation/types';
 import { StyleSheet } from 'react-native';
 import { colors } from '../../../constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useToastStore } from '../../../store/toastStore';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'GameSelect'>;
 
 export function GameSelectScreen() {
   const navigation = useNavigation<Nav>();
+  const { showToast } = useToastStore();
   const { games, addGame, loadGames, updateGame, deleteGame } = useGameStore();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [gameInEdit, setGameInEdit] = useState<Game | null>(null);
@@ -43,19 +45,23 @@ export function GameSelectScreen() {
   }
 
   async function handleOnSave(data: GameData) {
-    if (gameInEdit) {
-      await updateGame(gameInEdit.id, data);
-    } else {
-      await addGame(data);
-    }
+    const success = gameInEdit ? await updateGame(gameInEdit.id, data) : await addGame(data);
 
-    setIsModalVisible(false);
+    if (success) {
+      setIsModalVisible(false);
+    } else {
+      showToast('Failed to save game. Please try again.', 'error');
+    }
   }
 
   async function handleOnDelete() {
-    if (gameInEdit) await deleteGame(gameInEdit.id);
-
-    setIsModalVisible(false);
+    if (!gameInEdit) return;
+    const success = await deleteGame(gameInEdit.id);
+    if (success) {
+      setIsModalVisible(false);
+    } else {
+      showToast('Failed to delete game. Please try again.', 'error');
+    }
   }
 
   function handleOnSelectGame(item: Game) {

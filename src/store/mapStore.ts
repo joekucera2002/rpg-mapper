@@ -5,6 +5,7 @@ import { Area, AreaData } from '../types/area';
 import { defaultCoordinateSystem, Map, MapData } from '../types/map';
 import { Q } from '@nozbe/watermelondb';
 import { MapModel } from '../data/models/MapModel';
+import { CellModel } from '../data/models/CellModel';
 
 export type MapStore = {
   currentGameId: string | null;
@@ -57,10 +58,7 @@ export const useMapStore = create<MapStore>((set, get) => ({
         database.get<MapModel>('maps').query(Q.where('game_id', gameId)).fetch(),
       ]);
 
-      const areas = mapAreas(areaRecords);
-      const maps = mapMaps(mapRecords);
-
-      set({ currentGameId: gameId, areas, maps });
+      set({ currentGameId: gameId, areas: mapAreas(areaRecords), maps: mapMaps(mapRecords) });
     } catch (e) {
       console.error('Failed to load areas and maps', e);
     }
@@ -81,7 +79,6 @@ export const useMapStore = create<MapStore>((set, get) => ({
       });
 
       await get().loadAreasAndMaps(gameId);
-
       return true;
     } catch (e) {
       console.error('Failed to add area', e);
@@ -96,7 +93,6 @@ export const useMapStore = create<MapStore>((set, get) => ({
     try {
       await database.write(async () => {
         const area = await database.get<AreaModel>('areas').find(areaId);
-
         await area.update((a) => {
           a.parentAreaId = data.parentAreaId;
           a.name = data.name;
@@ -104,7 +100,6 @@ export const useMapStore = create<MapStore>((set, get) => ({
       });
 
       await get().loadAreasAndMaps(gameId);
-
       return true;
     } catch (e) {
       console.error('Failed to update area', e);
@@ -119,7 +114,7 @@ export const useMapStore = create<MapStore>((set, get) => ({
     try {
       const activeMapId = get().activeMapId;
 
-      // collect descendent areas to area being deleted so they can be deleted
+      // collect all descendant area ids recursively
       const areas = get().areas;
       function getSubAreas(id: string): string[] {
         const children = areas.filter((a) => a.parentAreaId === id);
@@ -127,20 +122,29 @@ export const useMapStore = create<MapStore>((set, get) => ({
       }
       const areaIdsToDelete = getSubAreas(areaId);
 
-      // get all maps to delete
+      // collect all map ids to delete
       const mapIdsToDelete = get()
         .maps.filter((m) => areaIdsToDelete.includes(m.areaId))
         .map((m) => m.id);
 
       await database.write(async () => {
-        // delete all maps in areas being deleted
+        // delete all cells on affected maps
+        if (mapIdsToDelete.length > 0) {
+          const cellsToDelete = await database
+            .get<CellModel>('cells')
+            .query(Q.where('map_id', Q.oneOf(mapIdsToDelete)))
+            .fetch();
+          await Promise.all(cellsToDelete.map((c) => c.destroyPermanently()));
+        }
+
+        // delete all maps in affected areas
         const mapsToDelete = await database
           .get<MapModel>('maps')
           .query(Q.where('area_id', Q.oneOf(areaIdsToDelete)))
           .fetch();
         await Promise.all(mapsToDelete.map((m) => m.destroyPermanently()));
 
-        // delete affected areas
+        // delete all affected areas
         const areasToDelete = await database
           .get<AreaModel>('areas')
           .query(Q.where('id', Q.oneOf(areaIdsToDelete)))
@@ -159,7 +163,6 @@ export const useMapStore = create<MapStore>((set, get) => ({
   },
 
   toggleAreaOpen: async (areaId: string) => {
-    // Optimistically update state (prevents delay in UI)
     set((state) => ({
       areas: state.areas.map((a) => (a.id === areaId ? { ...a, isOpen: !a.isOpen } : a)),
     }));
@@ -173,8 +176,6 @@ export const useMapStore = create<MapStore>((set, get) => ({
       });
     } catch (e) {
       console.error('Failed to toggle area', e);
-
-      // Rollback optimistic state change
       set((state) => ({
         areas: state.areas.map((a) => (a.id === areaId ? { ...a, isOpen: !a.isOpen } : a)),
       }));
@@ -241,6 +242,14 @@ export const useMapStore = create<MapStore>((set, get) => ({
       const activeMapId = get().activeMapId;
 
       await database.write(async () => {
+        // delete all cells on this map
+        const cellsToDelete = await database
+          .get<CellModel>('cells')
+          .query(Q.where('map_id', mapId))
+          .fetch();
+        await Promise.all(cellsToDelete.map((c) => c.destroyPermanently()));
+
+        // delete the map
         const map = await database.get<MapModel>('maps').find(mapId);
         await map.destroyPermanently();
       });

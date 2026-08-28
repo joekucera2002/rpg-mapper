@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import type { RootStackParamList } from './types';
 import { GameSelectScreen } from '../features/game/screens/GameSelectScreen';
 import { MapEditorScreen } from '../features/map/screens/MapEditorScreen';
+import { ToastContainer } from '../components/common/ToastContainer';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -19,6 +20,7 @@ export function RootNavigator() {
             <Stack.Screen name="MapEditor" component={MapEditorScreen} />
           </Stack.Navigator>
         </NavigationContainer>
+        <ToastContainer />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

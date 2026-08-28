@@ -12,6 +12,7 @@ import { AreaModalProps } from '../../components/AreaModal/AreaModal.types';
 import { createGame } from '../../../../testutils/gameFactory';
 import { GameStore, useGameStore } from '../../../../store/gameStore';
 import { MapStore, useMapStore } from '../../../../store/mapStore';
+import { useToastStore } from '../../../../store/toastStore';
 import { AreaData } from '../../../../types/area';
 import { createArea, createAreas } from '../../../../testutils/areaFactory';
 import { MapModalProps } from '../../components/MapModal/MapModal.types';
@@ -35,6 +36,7 @@ const mockAddMap = jest.fn();
 const mockUpdateMap = jest.fn();
 const mockDeleteMap = jest.fn();
 const mockSetActiveMap = jest.fn();
+const mockShowToast = jest.fn();
 
 jest.mock('@react-navigation/native', () => {
   const actual = jest.requireActual('@react-navigation/native');
@@ -51,6 +53,7 @@ jest.mock('../../../../data/database', () => ({
 
 jest.mock('../../../../store/gameStore');
 jest.mock('../../../../store/mapStore');
+jest.mock('../../../../store/toastStore');
 jest.spyOn(MapEditorTopBarModule, 'MapEditorTopBar');
 jest.spyOn(MapEditorSidebarModule, 'MapEditorSidebar');
 jest.spyOn(MapEditorCanvasModule, 'MapEditorCanvas');
@@ -117,6 +120,12 @@ function renderScreen({ games = [game] }: { games?: Game[] } = {}) {
     } as unknown as MapStore),
   );
 
+  jest.mocked(useToastStore).mockReturnValue({
+    toasts: [],
+    showToast: mockShowToast,
+    hideToast: jest.fn(),
+  } as unknown as ReturnType<typeof useToastStore>);
+
   render(<MapEditorScreen />);
 
   return {
@@ -139,6 +148,15 @@ function renderScreen({ games = [game] }: { games?: Game[] } = {}) {
 }
 
 describe('MapEditorScreen', () => {
+  beforeEach(() => {
+    mockAddArea.mockResolvedValue(true);
+    mockEditArea.mockResolvedValue(true);
+    mockDeleteArea.mockResolvedValue(true);
+    mockAddMap.mockResolvedValue(true);
+    mockUpdateMap.mockResolvedValue(true);
+    mockDeleteMap.mockResolvedValue(true);
+  });
+
   it('loads maps and areas on mount', () => {
     renderScreen();
     expect(mockLoadAreasAndMaps).toHaveBeenCalledWith(game.id);
@@ -159,11 +177,9 @@ describe('MapEditorScreen', () => {
       describe('onBack', () => {
         it('calls goBack when the back button is pressed', async () => {
           const s = renderScreen();
-
           await act(async () => {
             s.topBarProps.onBack();
           });
-
           expect(mockNavigation.goBack).toHaveBeenCalledTimes(1);
         });
       });
@@ -230,7 +246,6 @@ describe('MapEditorScreen', () => {
           await act(async () => {
             s.sidebarProps.onToggleArea(area);
           });
-
           expect(mockToggleAreaOpen).toHaveBeenCalledWith(area.id);
         });
       });
@@ -253,11 +268,9 @@ describe('MapEditorScreen', () => {
           await act(async () => {
             s.sidebarProps.onNewMap(area.id);
           });
-
           await act(async () => {
             s.mapModalProps.onCancel();
           });
-
           expect(screen.queryByTestId('map-modal')).toBeNull();
         });
       });
@@ -280,11 +293,9 @@ describe('MapEditorScreen', () => {
           await act(async () => {
             s.sidebarProps.onEditMap(map);
           });
-
           await act(async () => {
             s.mapModalProps.onCancel();
           });
-
           expect(screen.queryByTestId('map-modal')).toBeNull();
         });
       });
@@ -326,7 +337,6 @@ describe('MapEditorScreen', () => {
           await act(async () => {
             s.sidebarProps.onNewArea(null);
           });
-
           await act(async () => {
             s.areaModalProps.onCancel();
           });
@@ -341,25 +351,48 @@ describe('MapEditorScreen', () => {
           await act(async () => {
             s.sidebarProps.onEditArea(area);
           });
-
           await act(async () => {
             s.areaModalProps.onDelete();
           });
-
           expect(mockDeleteArea).toHaveBeenCalledWith(area.id);
         });
 
-        it('closes the AreaModal', async () => {
+        it('closes the AreaModal on success', async () => {
           const s = renderScreen();
           await act(async () => {
             s.sidebarProps.onEditArea(areas[0]);
           });
-
           await act(async () => {
             s.areaModalProps.onDelete();
           });
-
           expect(screen.queryByTestId('area-modal')).toBeNull();
+        });
+
+        it('keeps AreaModal open when deleteArea fails', async () => {
+          mockDeleteArea.mockResolvedValue(false);
+          const s = renderScreen();
+          await act(async () => {
+            s.sidebarProps.onEditArea(areas[0]);
+          });
+          await act(async () => {
+            s.areaModalProps.onDelete();
+          });
+          expect(screen.getByTestId('area-modal')).toBeTruthy();
+        });
+
+        it('shows error toast when deleteArea fails', async () => {
+          mockDeleteArea.mockResolvedValue(false);
+          const s = renderScreen();
+          await act(async () => {
+            s.sidebarProps.onEditArea(areas[0]);
+          });
+          await act(async () => {
+            s.areaModalProps.onDelete();
+          });
+          expect(mockShowToast).toHaveBeenCalledWith(
+            'Failed to delete area. Please try again.',
+            'error',
+          );
         });
       });
 
@@ -372,7 +405,6 @@ describe('MapEditorScreen', () => {
           await act(async () => {
             s.areaModalProps.onSave({ parentAreaId: null, name: 'Test Area' });
           });
-
           expect(mockAddArea).toHaveBeenCalledWith(expect.objectContaining({ name: 'Test Area' }));
         });
 
@@ -382,13 +414,10 @@ describe('MapEditorScreen', () => {
           await act(async () => {
             s.sidebarProps.onEditArea(area);
           });
-
           const updatedArea: AreaData = { parentAreaId: area.parentAreaId, name: 'Updated Area' };
-
           await act(async () => {
             s.areaModalProps.onSave(updatedArea);
           });
-
           expect(mockEditArea).toHaveBeenCalledWith(area.id, updatedArea);
         });
 
@@ -401,13 +430,12 @@ describe('MapEditorScreen', () => {
           await act(async () => {
             s.areaModalProps.onSave(area);
           });
-
           expect(mockAddArea).toHaveBeenCalledWith(
             expect.objectContaining({ ...createArea, parentAreaId: 'parentId' }),
           );
         });
 
-        it('the AreaModal is closed on success', async () => {
+        it('closes the AreaModal on success', async () => {
           const s = renderScreen();
           await act(async () => {
             s.sidebarProps.onNewArea(null);
@@ -416,6 +444,62 @@ describe('MapEditorScreen', () => {
             s.areaModalProps.onSave({ parentAreaId: null, name: 'Test Area' });
           });
           expect(screen.queryByTestId('area-modal')).toBeNull();
+        });
+
+        it('keeps AreaModal open when addArea fails', async () => {
+          mockAddArea.mockResolvedValue(false);
+          const s = renderScreen();
+          await act(async () => {
+            s.sidebarProps.onNewArea(null);
+          });
+          await act(async () => {
+            s.areaModalProps.onSave({ parentAreaId: null, name: 'Test Area' });
+          });
+          expect(screen.getByTestId('area-modal')).toBeTruthy();
+        });
+
+        it('shows error toast when addArea fails', async () => {
+          mockAddArea.mockResolvedValue(false);
+          const s = renderScreen();
+          await act(async () => {
+            s.sidebarProps.onNewArea(null);
+          });
+          await act(async () => {
+            s.areaModalProps.onSave({ parentAreaId: null, name: 'Test Area' });
+          });
+          expect(mockShowToast).toHaveBeenCalledWith(
+            'Failed to save area. Please try again.',
+            'error',
+          );
+        });
+
+        it('keeps AreaModal open when updateArea fails', async () => {
+          mockEditArea.mockResolvedValue(false);
+          const area = areas[0];
+          const s = renderScreen();
+          await act(async () => {
+            s.sidebarProps.onEditArea(area);
+          });
+          await act(async () => {
+            s.areaModalProps.onSave({ parentAreaId: null, name: 'Updated' });
+          });
+          expect(screen.getByTestId('area-modal')).toBeTruthy();
+        });
+
+        it('shows error toast when updateArea fails', async () => {
+          mockEditArea.mockResolvedValue(false);
+          const area = areas[0];
+          const s = renderScreen();
+          await act(async () => {
+            s.sidebarProps.onEditArea(area);
+          });
+          await act(async () => {
+            s.areaModalProps.onSave({ parentAreaId: null, name: 'Updated' });
+          });
+          expect(mockShowToast).toHaveBeenCalledWith(
+            'Failed to save area. Please try again.',
+            'error',
+          );
         });
       });
     });
@@ -454,7 +538,7 @@ describe('MapEditorScreen', () => {
       expect(s.mapModalProps.gameMarkers).toStrictEqual(game.rules.markers);
     });
 
-    it('is passed the empty markers array when game is not loaded (exceptional behavior', async () => {
+    it('is passed empty markers array when game is not loaded', async () => {
       const area = createArea();
       const s = renderScreen({ games: [] });
       await act(async () => {
@@ -490,7 +574,7 @@ describe('MapEditorScreen', () => {
           expect(mockAddMap).toHaveBeenCalledWith(map);
         });
 
-        it('calls updateMap when edit a map', async () => {
+        it('calls updateMap when editing a map', async () => {
           const s = renderScreen();
           const map = createMap();
           await act(async () => {
@@ -502,7 +586,7 @@ describe('MapEditorScreen', () => {
           expect(mockUpdateMap).toHaveBeenCalledWith(map.id, map);
         });
 
-        it('the MapModal is closed on success', async () => {
+        it('closes the MapModal on success', async () => {
           const s = renderScreen();
           await act(async () => {
             s.sidebarProps.onNewMap('123');
@@ -513,10 +597,68 @@ describe('MapEditorScreen', () => {
           });
           expect(screen.queryByTestId('map-modal')).toBeNull();
         });
+
+        it('keeps MapModal open when addMap fails', async () => {
+          mockAddMap.mockResolvedValue(false);
+          const s = renderScreen();
+          await act(async () => {
+            s.sidebarProps.onNewMap('123');
+          });
+          const map = createMap({ areaId: '123' });
+          await act(async () => {
+            s.mapModalProps.onSave(map);
+          });
+          expect(screen.getByTestId('map-modal')).toBeTruthy();
+        });
+
+        it('shows error toast when addMap fails', async () => {
+          mockAddMap.mockResolvedValue(false);
+          const s = renderScreen();
+          await act(async () => {
+            s.sidebarProps.onNewMap('123');
+          });
+          const map = createMap({ areaId: '123' });
+          await act(async () => {
+            s.mapModalProps.onSave(map);
+          });
+          expect(mockShowToast).toHaveBeenCalledWith(
+            'Failed to save map. Please try again.',
+            'error',
+          );
+        });
+
+        it('keeps MapModal open when updateMap fails', async () => {
+          mockUpdateMap.mockResolvedValue(false);
+          const s = renderScreen();
+          const map = createMap();
+          await act(async () => {
+            s.sidebarProps.onEditMap(map);
+          });
+          await act(async () => {
+            s.mapModalProps.onSave(map);
+          });
+          expect(screen.getByTestId('map-modal')).toBeTruthy();
+        });
+
+        it('shows error toast when updateMap fails', async () => {
+          mockUpdateMap.mockResolvedValue(false);
+          const s = renderScreen();
+          const map = createMap();
+          await act(async () => {
+            s.sidebarProps.onEditMap(map);
+          });
+          await act(async () => {
+            s.mapModalProps.onSave(map);
+          });
+          expect(mockShowToast).toHaveBeenCalledWith(
+            'Failed to save map. Please try again.',
+            'error',
+          );
+        });
       });
 
       describe('onDelete', () => {
-        it('is called when handling delete event from MapModal', async () => {
+        it('calls deleteMap', async () => {
           const s = renderScreen();
           const map = createMap();
           await act(async () => {
@@ -528,7 +670,7 @@ describe('MapEditorScreen', () => {
           expect(mockDeleteMap).toHaveBeenCalledWith(map.id);
         });
 
-        it('the MapModal is closed on success', async () => {
+        it('closes the MapModal on success', async () => {
           const s = renderScreen();
           const map = createMap();
           await act(async () => {
@@ -538,6 +680,35 @@ describe('MapEditorScreen', () => {
             s.mapModalProps.onDelete();
           });
           expect(screen.queryByTestId('map-modal')).toBeNull();
+        });
+
+        it('keeps MapModal open when deleteMap fails', async () => {
+          mockDeleteMap.mockResolvedValue(false);
+          const s = renderScreen();
+          const map = createMap();
+          await act(async () => {
+            s.sidebarProps.onEditMap(map);
+          });
+          await act(async () => {
+            s.mapModalProps.onDelete();
+          });
+          expect(screen.getByTestId('map-modal')).toBeTruthy();
+        });
+
+        it('shows error toast when deleteMap fails', async () => {
+          mockDeleteMap.mockResolvedValue(false);
+          const s = renderScreen();
+          const map = createMap();
+          await act(async () => {
+            s.sidebarProps.onEditMap(map);
+          });
+          await act(async () => {
+            s.mapModalProps.onDelete();
+          });
+          expect(mockShowToast).toHaveBeenCalledWith(
+            'Failed to delete map. Please try again.',
+            'error',
+          );
         });
       });
     });

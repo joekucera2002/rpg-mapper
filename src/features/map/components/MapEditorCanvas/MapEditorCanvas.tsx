@@ -28,7 +28,8 @@ const WALL_COLOR = '#999999';
 const SELECTION_COLOR = '#378ADD';
 
 export function MapEditorCanvas({ game, activeMap }: MapEditorCanvasProps) {
-  const { cells, selectedKey, loadCells, addCell, eraseCell, selectCell } = useCellStore();
+  const { cells, selectedKey, loadCells, addCell, eraseCell, selectCell, clearCells } =
+    useCellStore();
   const [canvasSize, setCanvasSize] = useState<CanvasSize>({ width: 0, height: 0 });
   const [activeTool] = useState<ActiveTool>('paint');
   const [panOffset, setPanOffset] = useState<PanOffset>({ x: 0, y: 0 });
@@ -39,12 +40,20 @@ export function MapEditorCanvas({ game, activeMap }: MapEditorCanvasProps) {
   const startPanY = useSharedValue(0);
   const panLocked = useSharedValue(false);
 
+  // load cells when map changes
   useEffect(() => {
     if (game && activeMap) {
       void loadCells(game.id, activeMap.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game?.id, activeMap?.id, loadCells]);
+
+  // clear cells when map is deselected
+  useEffect(() => {
+    if (!activeMap) {
+      void clearCells();
+    }
+  }, [activeMap, clearCells]);
 
   useAnimatedReaction(
     () => ({ x: panX.get(), y: panY.get() }),

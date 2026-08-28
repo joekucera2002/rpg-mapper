@@ -747,4 +747,22 @@ describe('CellStore', () => {
       jest.restoreAllMocks();
     });
   });
+
+  describe('clearCells', () => {
+    it('clears all cells', () => {
+      useCellStore.setState({
+        cells: { '0,0': createCell() },
+        selectedKey: '0,0',
+        currentMapId: 'map-1',
+        undoStack: [{ mapId: 'map-1', snapshot: {} }],
+      });
+
+      useCellStore.getState().clearCells();
+
+      expect(useCellStore.getState().cells).toEqual({});
+      expect(useCellStore.getState().selectedKey).toBeNull();
+      expect(useCellStore.getState().currentMapId).toBeNull();
+      expect(useCellStore.getState().undoStack).toHaveLength(0);
+    });
+  });
 });

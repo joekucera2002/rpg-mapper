@@ -17,6 +17,7 @@ import { MapModal } from '../components/MapModal/MapModal';
 import { MapModalProps } from '../components/MapModal/MapModal.types';
 import { Area, AreaData } from '../../../types/area';
 import { Map, MapData } from '../../../types/map';
+import { useToastStore } from '../../../store/toastStore';
 
 export function MapEditorScreen() {
   const navigation = useNavigation<MapEditorScreenProps['navigation']>();
@@ -24,6 +25,7 @@ export function MapEditorScreen() {
   const { gameId } = route.params;
 
   // Stores
+  const { showToast } = useToastStore();
   const games = useGameStore((s) => s.games);
   const game = games.find((g) => g.id === gameId) ?? null;
 
@@ -70,17 +72,25 @@ export function MapEditorScreen() {
   }
 
   async function handleOnSaveArea(data: AreaData) {
-    if (areaInEdit) {
-      await updateArea(areaInEdit.id, data);
+    const success = areaInEdit
+      ? await updateArea(areaInEdit.id, data)
+      : await addArea({ ...data, parentAreaId: areaModalParentId });
+
+    if (success) {
+      setIsAreaModalVisible(false);
     } else {
-      await addArea({ ...data, parentAreaId: areaModalParentId });
+      showToast('Failed to save area. Please try again.', 'error');
     }
-    setIsAreaModalVisible(false);
   }
 
   async function handleOnDeleteArea() {
-    if (areaInEdit) await deleteArea(areaInEdit.id);
-    setIsAreaModalVisible(false);
+    if (!areaInEdit) return;
+    const success = await deleteArea(areaInEdit.id);
+    if (success) {
+      setIsAreaModalVisible(false);
+    } else {
+      showToast('Failed to delete area. Please try again.', 'error');
+    }
   }
 
   async function handleOnToggleArea(area: Area) {
@@ -101,17 +111,23 @@ export function MapEditorScreen() {
   }
 
   async function handleOnSaveMap(data: MapData) {
-    if (mapInEdit) {
-      await updateMap(mapInEdit.id, data);
+    const success = mapInEdit ? await updateMap(mapInEdit.id, data) : await addMap(data);
+
+    if (success) {
+      setIsMapModalVisible(false);
     } else {
-      await addMap(data);
+      showToast('Failed to save map. Please try again.', 'error');
     }
-    setIsMapModalVisible(false);
   }
 
   async function handleOnDeleteMap() {
-    if (mapInEdit) await deleteMap(mapInEdit.id);
-    setIsMapModalVisible(false);
+    if (!mapInEdit) return;
+    const success = await deleteMap(mapInEdit.id);
+    if (success) {
+      setIsMapModalVisible(false);
+    } else {
+      showToast('Failed to delete map. Please try again.', 'error');
+    }
   }
 
   // Props

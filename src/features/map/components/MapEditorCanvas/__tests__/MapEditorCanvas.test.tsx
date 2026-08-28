@@ -57,6 +57,25 @@ const mockLoadCells = jest.fn();
 const mockAddCell = jest.fn();
 const mockEraseCell = jest.fn();
 const mockSelectCell = jest.fn();
+const mockClearCells = jest.fn();
+
+function mockStore(overrides = {}) {
+  jest.mocked(useCellStore).mockReturnValue({
+    cells: {},
+    selectedKey: null,
+    loadCells: mockLoadCells,
+    addCell: mockAddCell,
+    eraseCell: mockEraseCell,
+    selectCell: mockSelectCell,
+    clearCells: mockClearCells,
+    currentMapId: null,
+    undoStack: [],
+    updateCell: jest.fn(),
+    eraseCells: jest.fn(),
+    undo: jest.fn(),
+    ...overrides,
+  } as unknown as ReturnType<typeof useCellStore>);
+}
 
 function renderComponent(overrides: Partial<MapEditorCanvasProps> = {}) {
   const props = { ...defaultProps, ...overrides };
@@ -65,19 +84,7 @@ function renderComponent(overrides: Partial<MapEditorCanvasProps> = {}) {
 
 describe('MapEditorCanvas', () => {
   beforeEach(() => {
-    jest.mocked(useCellStore).mockReturnValue({
-      cells: {},
-      selectedKey: null,
-      loadCells: mockLoadCells,
-      addCell: mockAddCell,
-      eraseCell: mockEraseCell,
-      selectCell: mockSelectCell,
-      currentMapId: null,
-      undoStack: [],
-      updateCell: jest.fn(),
-      eraseCells: jest.fn(),
-      undo: jest.fn(),
-    } as unknown as ReturnType<typeof useCellStore>);
+    mockStore();
   });
 
   describe('canvas container', () => {
@@ -126,6 +133,16 @@ describe('MapEditorCanvas', () => {
     it('does not show the no map message when a map is selected', () => {
       renderComponent();
       expect(screen.queryByTestId('no-map-message')).toBeNull();
+    });
+
+    it('calls clearCells when activeMap is null', () => {
+      renderComponent({ activeMap: null });
+      expect(mockClearCells).toHaveBeenCalled();
+    });
+
+    it('does not call clearCells when activeMap is set', () => {
+      renderComponent();
+      expect(mockClearCells).not.toHaveBeenCalled();
     });
   });
 

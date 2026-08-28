@@ -1,14 +1,18 @@
 import { create } from 'zustand';
 import { Game, GameData, GameRules } from '../types/game';
 import { GameModel } from '../data/models/GameModel';
+import { AreaModel } from '../data/models/AreaModel';
+import { MapModel } from '../data/models/MapModel';
+import { CellModel } from '../data/models/CellModel';
 import { database } from '../data/database';
+import { Q } from '@nozbe/watermelondb';
 
 export interface GameStore {
   games: Game[];
   loadGames: () => Promise<void>;
-  addGame: (data: GameData) => Promise<void>;
-  updateGame: (id: string, data: GameData) => Promise<void>;
-  deleteGame: (id: string) => Promise<void>;
+  addGame: (data: GameData) => Promise<boolean>;
+  updateGame: (id: string, data: GameData) => Promise<boolean>;
+  deleteGame: (id: string) => Promise<boolean>;
 }
 
 function defaultRules(): GameRules {
@@ -36,61 +40,89 @@ function toGame(model: GameModel): Game {
   };
 }
 
-export const useGameStore = create<GameStore>()((set, get) => ({
+async function fetchGames(): Promise<Game[]> {
+  const models = await database.get<GameModel>('games').query().fetch();
+  return models.map(toGame);
+}
+
+export const useGameStore = create<GameStore>()((set) => ({
   games: [],
 
   loadGames: async () => {
-    const collection = database.get<GameModel>('games');
-    const models = await collection.query().fetch();
-
-    set({ games: models.map(toGame) });
+    try {
+      set({ games: await fetchGames() });
+    } catch (e) {
+      console.error('Failed to load games', e);
+    }
   },
 
   addGame: async (data) => {
-    const collection = database.get<GameModel>('games');
-
-    const now = Date.now();
-
-    await database.write(async () => {
-      await collection.create((game) => {
-        game.name = data.name;
-        game.color = data.color;
-        game.image = data.image;
-        game.rules = JSON.stringify(data.rules ?? defaultRules());
-        game.lastUpdated = now;
-        game.createdAt = now;
+    try {
+      const now = Date.now();
+      await database.write(async () => {
+        await database.get<GameModel>('games').create((game) => {
+          game.name = data.name;
+          game.color = data.color;
+          game.image = data.image;
+          game.rules = JSON.stringify(data.rules ?? defaultRules());
+          game.lastUpdated = now;
+          game.createdAt = now;
+        });
       });
-    });
-
-    await get().loadGames();
+      set({ games: await fetchGames() });
+      return true;
+    } catch (e) {
+      console.error('Failed to add game', e);
+      return false;
+    }
   },
 
   updateGame: async (id, data) => {
-    const collection = database.get<GameModel>('games');
-    const model = await collection.find(id);
-    const now = Date.now();
-
-    await database.write(async () => {
-      await model.update((game) => {
-        if (data.name !== undefined) game.name = data.name;
-        if (data.color !== undefined) game.color = data.color;
-        if (data.image !== undefined) game.image = data.image;
-        if (data.rules !== undefined) game.rules = JSON.stringify(data.rules);
-        game.lastUpdated = now;
+    try {
+      const now = Date.now();
+      await database.write(async () => {
+        const model = await database.get<GameModel>('games').find(id);
+        await model.update((game) => {
+          if (data.name !== undefined) game.name = data.name;
+          if (data.color !== undefined) game.color = data.color;
+          if (data.image !== undefined) game.image = data.image;
+          if (data.rules !== undefined) game.rules = JSON.stringify(data.rules);
+          game.lastUpdated = now;
+        });
       });
-    });
-
-    await get().loadGames();
+      set({ games: await fetchGames() });
+      return true;
+    } catch (e) {
+      console.error('Failed to update game', e);
+      return false;
+    }
   },
 
   deleteGame: async (id) => {
-    const collection = database.get<GameModel>('games');
-    const model = await collection.find(id);
+    try {
+      await database.write(async () => {
+        // delete all cells for this game
+        const cells = await database.get<CellModel>('cells').query(Q.where('game_id', id)).fetch();
+        await Promise.all(cells.map((c) => c.destroyPermanently()));
 
-    await database.write(async () => {
-      await model.markAsDeleted();
-    });
+        // delete all maps for this game
+        const maps = await database.get<MapModel>('maps').query(Q.where('game_id', id)).fetch();
+        await Promise.all(maps.map((m) => m.destroyPermanently()));
 
-    await get().loadGames();
+        // delete all areas for this game
+        const areas = await database.get<AreaModel>('areas').query(Q.where('game_id', id)).fetch();
+        await Promise.all(areas.map((a) => a.destroyPermanently()));
+
+        // delete the game
+        const game = await database.get<GameModel>('games').find(id);
+        await game.destroyPermanently();
+      });
+
+      set({ games: await fetchGames() });
+      return true;
+    } catch (e) {
+      console.error('Failed to delete game', e);
+      return false;
+    }
   },
 }));

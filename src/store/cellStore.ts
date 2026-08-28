@@ -27,6 +27,7 @@ export type CellStore = {
   eraseCells: (gameId: string, mapId: string, keys: string[]) => Promise<void>;
   selectCell: (key: string | null) => void;
   undo: (gameId: string, mapId: string) => Promise<void>;
+  clearCells: () => void;
 };
 
 async function fetchCells(gameId: string, mapId: string): Promise<CellMap> {
@@ -304,5 +305,9 @@ export const useCellStore = create<CellStore>((set, get) => ({
     } catch (e) {
       console.error('Failed to sync undo to DB', e);
     }
+  },
+
+  clearCells: () => {
+    set({ cells: {}, selectedKey: null, currentMapId: null, undoStack: [] });
   },
 }));
