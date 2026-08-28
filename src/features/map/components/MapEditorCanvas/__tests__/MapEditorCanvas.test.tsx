@@ -4,6 +4,7 @@ import { MapEditorCanvasProps } from '../MapEditorCanvas.types';
 import { useCellStore } from '../../../../../store/cellStore';
 import { createGame } from '../../../../../testutils/gameFactory';
 import { createMap } from '../../../../../testutils/mapFactory';
+import { createCell } from '../../../../../testutils/cellFactory';
 
 jest.mock('../../../../../store/cellStore');
 
@@ -82,9 +83,16 @@ function renderComponent(overrides: Partial<MapEditorCanvasProps> = {}) {
   render(<MapEditorCanvas {...props} />);
 }
 
+function triggerLayout() {
+  fireEvent(screen.getByTestId('canvas-container'), 'layout', {
+    nativeEvent: { layout: { width: 800, height: 640, x: 0, y: 0 } },
+  });
+}
+
 describe('MapEditorCanvas', () => {
   beforeEach(() => {
     mockStore();
+    jest.clearAllMocks();
   });
 
   describe('canvas container', () => {
@@ -100,12 +108,15 @@ describe('MapEditorCanvas', () => {
 
     it('renders the skia canvas after layout', () => {
       renderComponent();
-
-      fireEvent(screen.getByTestId('canvas-container'), 'layout', {
-        nativeEvent: { layout: { width: 800, height: 600, x: 0, y: 0 } },
-      });
-
+      triggerLayout();
       expect(screen.getByTestId('skia-canvas')).toBeTruthy();
+    });
+
+    it('renders the skia canvas with correct dimensions after layout', () => {
+      renderComponent();
+      triggerLayout();
+      const canvas = screen.getByTestId('skia-canvas');
+      expect(canvas.props.style).toEqual({ width: 800, height: 640 });
     });
   });
 
@@ -160,6 +171,125 @@ describe('MapEditorCanvas', () => {
     it('does not call loadCells when activeMap is null', () => {
       renderComponent({ activeMap: null });
       expect(mockLoadCells).not.toHaveBeenCalled();
+    });
+
+    it('reloads cells when activeMap changes', () => {
+      const map2 = createMap({ gameId: game.id });
+      const { rerender } = render(<MapEditorCanvas {...defaultProps} />);
+      expect(mockLoadCells).toHaveBeenCalledWith(game.id, map.id);
+
+      rerender(<MapEditorCanvas {...defaultProps} activeMap={map2} />);
+      expect(mockLoadCells).toHaveBeenCalledWith(game.id, map2.id);
+    });
+
+    it('clears cells when activeMap changes to null', () => {
+      const { rerender } = render(<MapEditorCanvas {...defaultProps} />);
+      rerender(<MapEditorCanvas {...defaultProps} activeMap={null} />);
+      expect(mockClearCells).toHaveBeenCalled();
+    });
+  });
+
+  describe('renderGrid', () => {
+    it('renders the grid after layout', () => {
+      renderComponent();
+      triggerLayout();
+      expect(screen.getByTestId('skia-canvas')).toBeTruthy();
+    });
+
+    it('does not render the grid before layout', () => {
+      renderComponent();
+      expect(screen.queryByTestId('skia-canvas')).toBeNull();
+    });
+  });
+
+  describe('renderCells', () => {
+    it('renders cells after layout', () => {
+      const cell = createCell({ x: 0, y: 0, gameId: game.id, mapId: map.id });
+      mockStore({ cells: { '0,0': cell } });
+      renderComponent();
+      triggerLayout();
+      expect(screen.getByTestId('skia-canvas')).toBeTruthy();
+    });
+
+    it('renders with selected cell', () => {
+      const cell = createCell({ x: 0, y: 0, gameId: game.id, mapId: map.id });
+      mockStore({ cells: { '0,0': cell }, selectedKey: '0,0' });
+      renderComponent();
+      triggerLayout();
+      expect(screen.getByTestId('skia-canvas')).toBeTruthy();
+    });
+
+    it('renders with origin cell painted', () => {
+      const cell = createCell({ x: 0, y: 0, gameId: game.id, mapId: map.id });
+      mockStore({ cells: { '0,0': cell } });
+      renderComponent();
+      triggerLayout();
+      expect(screen.getByTestId('skia-canvas')).toBeTruthy();
+    });
+
+    it('renders with cell that has walls set', () => {
+      const cell = createCell({
+        x: 0,
+        y: 0,
+        gameId: game.id,
+        mapId: map.id,
+        walls: { N: 'wall', S: 'door', E: 'open', W: 'open' },
+      });
+      mockStore({ cells: { '0,0': cell } });
+      renderComponent();
+      triggerLayout();
+      expect(screen.getByTestId('skia-canvas')).toBeTruthy();
+    });
+
+    it('renders with multiple cells', () => {
+      const cell1 = createCell({ x: 0, y: 0, gameId: game.id, mapId: map.id });
+      const cell2 = createCell({ x: 1, y: 0, gameId: game.id, mapId: map.id });
+      const cell3 = createCell({ x: 0, y: 1, gameId: game.id, mapId: map.id });
+      mockStore({
+        cells: {
+          '0,0': cell1,
+          '1,0': cell2,
+          '0,1': cell3,
+        },
+      });
+      renderComponent();
+      triggerLayout();
+      expect(screen.getByTestId('skia-canvas')).toBeTruthy();
+    });
+
+    it('renders empty canvas with no cells', () => {
+      mockStore({ cells: {} });
+      renderComponent();
+      triggerLayout();
+      expect(screen.getByTestId('skia-canvas')).toBeTruthy();
+    });
+
+    it('renders correctly when activeMap has a non-default origin', () => {
+      const mapWithOrigin = createMap({
+        gameId: game.id,
+        coordinateSystem: {
+          originKey: '2,3',
+          originDisplayX: 0,
+          originDisplayY: 0,
+          xIncreases: 'right',
+          yIncreases: 'up',
+        },
+      });
+      renderComponent({ activeMap: mapWithOrigin });
+      triggerLayout();
+      expect(screen.getByTestId('skia-canvas')).toBeTruthy();
+    });
+  });
+
+  describe('game prop', () => {
+    it('renders without game', () => {
+      renderComponent({ game: null });
+      expect(screen.getByTestId('canvas-container')).toBeTruthy();
+    });
+
+    it('does not show no-map message when game is null but activeMap is set', () => {
+      renderComponent({ game: null });
+      expect(screen.queryByTestId('no-map-message')).toBeNull();
     });
   });
 });
