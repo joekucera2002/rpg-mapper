@@ -10,7 +10,6 @@ import { MapEditorCanvasProps } from './MapEditorCanvas.types';
 import { Cell, CellWalls } from '../../../../types/cell';
 import {
   CELL,
-  ActiveTool,
   PanOffset,
   CanvasSize,
   cellToCanvas,
@@ -18,6 +17,7 @@ import {
   getGridOffset,
 } from './canvasGeometry';
 import { handleTap } from './canvasInteractions';
+import { useEditorStore } from '../../../../store/editorStore';
 
 const GRID_COLOR = 'rgba(255,255,255,0.4)';
 const CELL_FILL = 'rgba(255,255,255,0.07)';
@@ -31,8 +31,9 @@ export function MapEditorCanvas({ game, activeMap }: MapEditorCanvasProps) {
   const { cells, selectedKey, loadCells, addCell, eraseCell, selectCell, clearCells } =
     useCellStore();
   const [canvasSize, setCanvasSize] = useState<CanvasSize>({ width: 0, height: 0 });
-  const [activeTool] = useState<ActiveTool>('paint');
   const [panOffset, setPanOffset] = useState<PanOffset>({ x: 0, y: 0 });
+
+  const activeTool = useEditorStore((s) => s.activeTool);
 
   const panX = useSharedValue(0);
   const panY = useSharedValue(0);

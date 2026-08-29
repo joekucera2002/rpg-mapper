@@ -5,6 +5,8 @@ import * as MapEditorSidebarModule from '../../components/MapEditorSidebar/MapEd
 import * as MapEditorCanvasModule from '../../components/MapEditorCanvas/MapEditorCanvas';
 import * as AreaModalModule from '../../components/AreaModal/AreaModal';
 import * as MapModalModule from '../../components/MapModal/MapModal';
+import * as MapPaletteModule from '../../components/MapPalette/MapPalette';
+import { MapPaletteProps } from '../../components/MapPalette/MapPalette.types';
 import { View } from 'react-native';
 import { MapEditorTopBarProps } from '../../components/MapEditorTopBar/MapEditorTopBar.types';
 import { MapEditorSidebarProps } from '../../components/MapEditorSidebar/MapEditorSidebar.types';
@@ -59,13 +61,18 @@ jest.spyOn(MapEditorSidebarModule, 'MapEditorSidebar');
 jest.spyOn(MapEditorCanvasModule, 'MapEditorCanvas');
 jest.spyOn(AreaModalModule, 'AreaModal');
 jest.spyOn(MapModalModule, 'MapModal');
+jest.spyOn(MapPaletteModule, 'MapPalette');
 
-function renderScreen({ games = [game] }: { games?: Game[] } = {}) {
+function renderScreen({
+  games = [game],
+  activeMapId = maps[1].id,
+}: { games?: Game[]; activeMapId?: string | null } = {}) {
   let capturedTopBarProps!: MapEditorTopBarProps;
   let capturedSidebarProps!: MapEditorSidebarProps;
   let capturedAreaModalProps!: AreaModalProps;
   let capturedMapModalProps!: MapModalProps;
   let capturedMapEditorCanvasProps!: MapEditorCanvasProps;
+  let capturedMapPaletteProps: MapPaletteProps | undefined;
 
   (MapEditorTopBarModule.MapEditorTopBar as jest.Mock).mockImplementation(
     (props: MapEditorTopBarProps) => {
@@ -98,6 +105,11 @@ function renderScreen({ games = [game] }: { games?: Game[] } = {}) {
     return <View testID="map-modal" />;
   });
 
+  (MapPaletteModule.MapPalette as jest.Mock).mockImplementation((props: MapPaletteProps) => {
+    capturedMapPaletteProps = props;
+    return <View testID="map-palette" />;
+  });
+
   jest
     .mocked(useGameStore)
     .mockImplementation((selector) => selector({ games } as unknown as GameStore));
@@ -107,7 +119,7 @@ function renderScreen({ games = [game] }: { games?: Game[] } = {}) {
       areas: areas,
       maps: maps,
       currentGameId: game.id,
-      activeMapId: maps[1].id,
+      activeMapId,
       addArea: mockAddArea,
       updateArea: mockEditArea,
       deleteArea: mockDeleteArea,
@@ -137,6 +149,9 @@ function renderScreen({ games = [game] }: { games?: Game[] } = {}) {
     },
     get canvasProps() {
       return capturedMapEditorCanvasProps;
+    },
+    get mapPaletteProps() {
+      return capturedMapPaletteProps;
     },
     get areaModalProps() {
       return capturedAreaModalProps;
@@ -321,6 +336,28 @@ describe('MapEditorScreen', () => {
     it('passes the active map', () => {
       const s = renderScreen();
       expect(s.canvasProps.activeMap).toBe(maps[1]);
+    });
+  });
+
+  describe('MapPalette', () => {
+    it('renders when a map is active', () => {
+      renderScreen();
+      expect(screen.getByTestId('map-palette')).toBeTruthy();
+    });
+
+    it('does not render when no map is active', () => {
+      renderScreen({ activeMapId: null });
+      expect(screen.queryByTestId('map-palette')).toBeNull();
+    });
+
+    it('passes the game', () => {
+      const s = renderScreen();
+      expect(s.mapPaletteProps?.game).toBe(game);
+    });
+
+    it('passes a null game when not loaded', () => {
+      const s = renderScreen({ games: [] });
+      expect(s.mapPaletteProps?.game).toBe(null);
     });
   });
 

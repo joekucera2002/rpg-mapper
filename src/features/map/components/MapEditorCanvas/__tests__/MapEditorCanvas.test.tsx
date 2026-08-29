@@ -1,7 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import * as gestureHandlerMock from 'react-native-gesture-handler';
 import { MapEditorCanvas } from '../MapEditorCanvas';
 import { MapEditorCanvasProps } from '../MapEditorCanvas.types';
 import { useCellStore } from '../../../../../store/cellStore';
+import { useEditorStore } from '../../../../../store/editorStore';
 import { createGame } from '../../../../../testutils/gameFactory';
 import { createMap } from '../../../../../testutils/mapFactory';
 import { createCell } from '../../../../../testutils/cellFactory';
@@ -25,26 +27,33 @@ jest.mock('react-native-reanimated', () => ({
   runOnJS: (fn: (...args: unknown[]) => unknown) => fn,
 }));
 
-jest.mock('react-native-gesture-handler', () => ({
-  GestureDetector: ({ children }: { children: React.ReactNode }) => children,
-  Gesture: {
-    Tap: () => ({
-      maxDuration: () => ({
-        onEnd: () => ({}),
+jest.mock('react-native-gesture-handler', () => {
+  const state: { tapOnEnd?: (e: { x: number; y: number }) => void } = {};
+  return {
+    __mockState: state,
+    GestureDetector: ({ children }: { children: React.ReactNode }) => children,
+    Gesture: {
+      Tap: () => ({
+        maxDuration: () => ({
+          onEnd: (cb: (e: { x: number; y: number }) => void) => {
+            state.tapOnEnd = cb;
+            return {};
+          },
+        }),
       }),
-    }),
-    Pan: () => ({
-      minPointers: () => ({
-        maxPointers: () => ({
-          onBegin: () => ({
-            onUpdate: () => ({}),
+      Pan: () => ({
+        minPointers: () => ({
+          maxPointers: () => ({
+            onBegin: () => ({
+              onUpdate: () => ({}),
+            }),
           }),
         }),
       }),
-    }),
-    Simultaneous: () => ({}),
-  },
-}));
+      Simultaneous: () => ({}),
+    },
+  };
+});
 
 const game = createGame();
 const map = createMap({ gameId: game.id });
@@ -89,10 +98,24 @@ function triggerLayout() {
   });
 }
 
+function simulateTap(x: number, y: number) {
+  const state = (
+    gestureHandlerMock as unknown as {
+      __mockState: { tapOnEnd?: (e: { x: number; y: number }) => void };
+    }
+  ).__mockState;
+  state.tapOnEnd?.({ x, y });
+}
+
 describe('MapEditorCanvas', () => {
   beforeEach(() => {
     mockStore();
     jest.clearAllMocks();
+    useEditorStore.setState({
+      activeTool: 'paint',
+      activeWallType: null,
+      palettePosition: 'bottom-left',
+    });
   });
 
   describe('canvas container', () => {
@@ -290,6 +313,62 @@ describe('MapEditorCanvas', () => {
     it('does not show no-map message when game is null but activeMap is set', () => {
       renderComponent({ game: null });
       expect(screen.queryByTestId('no-map-message')).toBeNull();
+    });
+  });
+
+  describe('activeTool from editorStore', () => {
+    it('adds a cell on tap when the store tool is paint and the cell is empty', async () => {
+      renderComponent();
+      triggerLayout();
+      simulateTap(410, 330);
+      await waitFor(() => expect(mockAddCell).toHaveBeenCalledWith(game.id, map.id, 0, 0));
+    });
+
+    it('erases a cell on tap when the store tool is erase', async () => {
+      const cell = createCell({ x: 0, y: 0, gameId: game.id, mapId: map.id });
+      mockStore({ cells: { '0,0': cell } });
+      useEditorStore.setState({ activeTool: 'erase' });
+      renderComponent();
+      triggerLayout();
+      simulateTap(410, 330);
+      await waitFor(() => expect(mockEraseCell).toHaveBeenCalledWith(game.id, map.id, '0,0'));
+    });
+
+    it('selects an existing cell on tap when the store tool is paint', async () => {
+      const cell = createCell({ x: 0, y: 0, gameId: game.id, mapId: map.id });
+      mockStore({ cells: { '0,0': cell }, selectedKey: null });
+      renderComponent();
+      triggerLayout();
+      simulateTap(410, 330);
+      await waitFor(() => expect(mockSelectCell).toHaveBeenCalledWith('0,0'));
+    });
+
+    it('deselects an already-selected cell on tap when the store tool is paint', async () => {
+      const cell = createCell({ x: 0, y: 0, gameId: game.id, mapId: map.id });
+      mockStore({ cells: { '0,0': cell }, selectedKey: '0,0' });
+      renderComponent();
+      triggerLayout();
+      simulateTap(410, 330);
+      await waitFor(() => expect(mockSelectCell).toHaveBeenCalledWith(null));
+    });
+
+    it('does nothing on tap when the store tool is pan', async () => {
+      useEditorStore.setState({ activeTool: 'pan' });
+      renderComponent();
+      triggerLayout();
+      simulateTap(410, 330);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(mockAddCell).not.toHaveBeenCalled();
+      expect(mockEraseCell).not.toHaveBeenCalled();
+      expect(mockSelectCell).not.toHaveBeenCalled();
+    });
+
+    it('does not react to taps when no map is selected', async () => {
+      renderComponent({ activeMap: null });
+      triggerLayout();
+      simulateTap(410, 330);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(mockAddCell).not.toHaveBeenCalled();
     });
   });
 });

@@ -47,3 +47,18 @@ export const WALL_TYPES = [
   'Tree',
   'Rock',
 ] as const;
+
+export type WallTypeName = (typeof WALL_TYPES)[number];
+
+export const WALL_TYPE_KEY: Record<WallTypeName, string> = {
+  Wall: 'wall',
+  Door: 'door',
+  'Secret Door': 'secret',
+  'Smashable Wall': 'smash',
+  Archway: 'archway',
+  'City Wall': 'city-wall',
+  Gate: 'gate',
+  Building: 'building',
+  Tree: 'tree',
+  Rock: 'rock',
+};

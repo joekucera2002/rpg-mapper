@@ -18,6 +18,7 @@ import { MapModalProps } from '../components/MapModal/MapModal.types';
 import { Area, AreaData } from '../../../types/area';
 import { Map, MapData } from '../../../types/map';
 import { useToastStore } from '../../../store/toastStore';
+import { MapPalette } from '../components/MapPalette/MapPalette';
 
 export function MapEditorScreen() {
   const navigation = useNavigation<MapEditorScreenProps['navigation']>();
@@ -177,6 +178,7 @@ export function MapEditorScreen() {
         <View style={styles.body}>
           <MapEditorSidebar {...sidebarProps} />
           <MapEditorCanvas {...mapEditorCanvasProps} />
+          {activeMap && <MapPalette game={game} />}
         </View>
       </SafeAreaView>
 
@@ -191,6 +193,10 @@ const styles = StyleSheet.create({
   body: {
     flex: 1,
     flexDirection: 'row',
+  },
+  canvasContainer: {
+    flex: 1,
+    position: 'relative',
   },
   root: {
     flex: 1,
