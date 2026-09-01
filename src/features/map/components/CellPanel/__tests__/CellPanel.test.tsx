@@ -54,7 +54,11 @@ function renderComponent(overrides: Partial<CellPanelProps> = {}) {
 beforeEach(() => {
   mockStore();
   jest.clearAllMocks();
-  useEditorStore.setState({ activeTool: 'paint', activeWallType: null, palettePosition: 'bottom-left' });
+  useEditorStore.setState({
+    activeTool: 'paint',
+    activeWallType: null,
+    palettePosition: 'bottom-left',
+  });
 });
 
 describe('CellPanel', () => {
