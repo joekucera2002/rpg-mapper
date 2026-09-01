@@ -18,6 +18,7 @@ import {
 } from './canvasGeometry';
 import { handleTap } from './canvasInteractions';
 import { useEditorStore } from '../../../../store/editorStore';
+import { CellPanel } from '../CellPanel/CellPanel';
 
 const GRID_COLOR = 'rgba(255,255,255,0.4)';
 const CELL_FILL = 'rgba(255,255,255,0.07)';
@@ -30,6 +31,7 @@ const SELECTION_COLOR = '#378ADD';
 export function MapEditorCanvas({ game, activeMap }: MapEditorCanvasProps) {
   const { cells, selectedKey, loadCells, addCell, eraseCell, selectCell, clearCells } =
     useCellStore();
+  const [cellPanelOpen, setCellPanelOpen] = useState(false);
   const [canvasSize, setCanvasSize] = useState<CanvasSize>({ width: 0, height: 0 });
   const [panOffset, setPanOffset] = useState<PanOffset>({ x: 0, y: 0 });
 
@@ -102,6 +104,7 @@ export function MapEditorCanvas({ game, activeMap }: MapEditorCanvasProps) {
       addCell,
       eraseCell,
       selectCell,
+      () => setCellPanelOpen(true),
     );
   }
 
@@ -281,6 +284,16 @@ export function MapEditorCanvas({ game, activeMap }: MapEditorCanvasProps) {
               {renderCells()}
             </Group>
           </Canvas>
+        )}
+
+        {cellPanelOpen && selectedKey && cells[selectedKey] && (
+          <CellPanel
+            key={selectedKey}
+            cell={cells[selectedKey]}
+            game={game}
+            activeMap={activeMap}
+            onClose={() => setCellPanelOpen(false)}
+          />
         )}
 
         {!activeMap && (

@@ -9,7 +9,7 @@ export class CellModel extends Model {
   @field('x') x!: number;
   @field('y') y!: number;
   @field('walls') walls!: string; // JSON
-  @field('marker') marker!: string | null;
+  @field('markers') markers!: string; // JSON
   @field('effects') effects!: string; // JSON
   @field('description') description!: string | null;
 }

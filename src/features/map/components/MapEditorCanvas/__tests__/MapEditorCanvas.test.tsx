@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import * as gestureHandlerMock from 'react-native-gesture-handler';
 import { MapEditorCanvas } from '../MapEditorCanvas';
 import { MapEditorCanvasProps } from '../MapEditorCanvas.types';
@@ -104,7 +104,9 @@ function simulateTap(x: number, y: number) {
       __mockState: { tapOnEnd?: (e: { x: number; y: number }) => void };
     }
   ).__mockState;
-  state.tapOnEnd?.({ x, y });
+  act(() => {
+    state.tapOnEnd?.({ x, y });
+  });
 }
 
 describe('MapEditorCanvas', () => {
@@ -343,13 +345,14 @@ describe('MapEditorCanvas', () => {
       await waitFor(() => expect(mockSelectCell).toHaveBeenCalledWith('0,0'));
     });
 
-    it('deselects an already-selected cell on tap when the store tool is paint', async () => {
+    it('opens the cell panel on tap when the store tool is paint and the cell is already selected', async () => {
       const cell = createCell({ x: 0, y: 0, gameId: game.id, mapId: map.id });
       mockStore({ cells: { '0,0': cell }, selectedKey: '0,0' });
       renderComponent();
       triggerLayout();
       simulateTap(410, 330);
-      await waitFor(() => expect(mockSelectCell).toHaveBeenCalledWith(null));
+      await waitFor(() => expect(screen.getByTestId('cell-panel')).toBeTruthy());
+      expect(mockSelectCell).not.toHaveBeenCalled();
     });
 
     it('does nothing on tap when the store tool is pan', async () => {
@@ -369,6 +372,57 @@ describe('MapEditorCanvas', () => {
       simulateTap(410, 330);
       await new Promise((resolve) => setTimeout(resolve, 0));
       expect(mockAddCell).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('CellPanel', () => {
+    it('does not render before any tap, even with a selected cell', () => {
+      const cell = createCell({ x: 0, y: 0, gameId: game.id, mapId: map.id });
+      mockStore({ cells: { '0,0': cell }, selectedKey: '0,0' });
+      renderComponent();
+      triggerLayout();
+      expect(screen.queryByTestId('cell-panel')).toBeNull();
+    });
+
+    it('does not render after a first tap that only selects a cell', async () => {
+      const cell = createCell({ x: 0, y: 0, gameId: game.id, mapId: map.id });
+      mockStore({ cells: { '0,0': cell }, selectedKey: null });
+      renderComponent();
+      triggerLayout();
+      simulateTap(410, 330);
+      await waitFor(() => expect(mockSelectCell).toHaveBeenCalledWith('0,0'));
+      expect(screen.queryByTestId('cell-panel')).toBeNull();
+    });
+
+    it('renders with the selected cell after tapping an already-selected cell', async () => {
+      const cell = createCell({ x: 0, y: 0, gameId: game.id, mapId: map.id, desc: 'A dusty room' });
+      mockStore({ cells: { '0,0': cell }, selectedKey: '0,0' });
+      renderComponent();
+      triggerLayout();
+      simulateTap(410, 330);
+      await waitFor(() =>
+        expect(screen.getByTestId('description-input').props.value).toBe('A dusty room'),
+      );
+    });
+
+    it('closes when the cell panel requests it', async () => {
+      const cell = createCell({ x: 0, y: 0, gameId: game.id, mapId: map.id });
+      mockStore({ cells: { '0,0': cell }, selectedKey: '0,0' });
+      renderComponent();
+      triggerLayout();
+      simulateTap(410, 330);
+      await waitFor(() => expect(screen.getByTestId('cell-panel')).toBeTruthy());
+
+      fireEvent.press(screen.getByTestId('cell-panel-close'));
+
+      expect(screen.queryByTestId('cell-panel')).toBeNull();
+    });
+
+    it('does not render when the selected cell is no longer in the cells map', () => {
+      mockStore({ cells: {}, selectedKey: '0,0' });
+      renderComponent();
+      triggerLayout();
+      expect(screen.queryByTestId('cell-panel')).toBeNull();
     });
   });
 });

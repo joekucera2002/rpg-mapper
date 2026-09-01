@@ -1,5 +1,12 @@
 import { CellModel } from '../../data/models/CellModel';
-import { cellKey, defaultWalls, parseWalls, parseEffects, toCell } from '../cellUtils';
+import {
+  cellKey,
+  defaultWalls,
+  parseWalls,
+  parseEffects,
+  parseMarkers,
+  toCell,
+} from '../cellUtils';
 
 function createCellModel(overrides: Partial<CellModel> = {}): CellModel {
   return {
@@ -9,7 +16,7 @@ function createCellModel(overrides: Partial<CellModel> = {}): CellModel {
     x: 0,
     y: 0,
     walls: JSON.stringify({ N: 'open', S: 'open', E: 'open', W: 'open' }),
-    marker: null,
+    markers: JSON.stringify([]),
     effects: JSON.stringify([]),
     description: null,
     ...overrides,
@@ -91,6 +98,29 @@ describe('parseEffects', () => {
   });
 });
 
+describe('parseMarkers', () => {
+  it('returns empty array when raw is null', () => {
+    expect(parseMarkers(null)).toEqual([]);
+  });
+
+  it('returns empty array when raw is empty string', () => {
+    expect(parseMarkers('')).toEqual([]);
+  });
+
+  it('returns empty array when raw is invalid JSON', () => {
+    expect(parseMarkers('not json')).toEqual([]);
+  });
+
+  it('parses valid markers JSON correctly', () => {
+    const markers = ['Shop', 'Guild'];
+    expect(parseMarkers(JSON.stringify(markers))).toEqual(markers);
+  });
+
+  it('returns empty array for empty JSON array', () => {
+    expect(parseMarkers('[]')).toEqual([]);
+  });
+});
+
 describe('toCell', () => {
   it('maps id correctly', () => {
     const model = createCellModel({ id: 'cell-123' });
@@ -125,14 +155,15 @@ describe('toCell', () => {
     expect(toCell(model).walls).toEqual(defaultWalls());
   });
 
-  it('maps marker correctly when set', () => {
-    const model = createCellModel({ marker: 'Shop' });
-    expect(toCell(model).marker).toBe('Shop');
+  it('parses markers from JSON', () => {
+    const markers = ['Shop', 'Guild'];
+    const model = createCellModel({ markers: JSON.stringify(markers) });
+    expect(toCell(model).markers).toEqual(markers);
   });
 
-  it('maps marker as null when not set', () => {
-    const model = createCellModel({ marker: null });
-    expect(toCell(model).marker).toBeNull();
+  it('returns empty markers when markers is invalid JSON', () => {
+    const model = createCellModel({ markers: 'invalid' });
+    expect(toCell(model).markers).toEqual([]);
   });
 
   it('parses effects from JSON', () => {

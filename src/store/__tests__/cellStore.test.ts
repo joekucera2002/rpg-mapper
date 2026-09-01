@@ -25,7 +25,7 @@ async function seedCell(x: number, y: number) {
       c.x = x;
       c.y = y;
       c.walls = JSON.stringify({ N: 'open', S: 'open', E: 'open', W: 'open' });
-      c.marker = null;
+      c.markers = JSON.stringify([]);
       c.effects = JSON.stringify([]);
       c.description = null;
     });
@@ -114,7 +114,7 @@ describe('CellStore', () => {
           c.x = 5;
           c.y = 5;
           c.walls = JSON.stringify({ N: 'open', S: 'open', E: 'open', W: 'open' });
-          c.marker = null;
+          c.markers = JSON.stringify([]);
           c.effects = JSON.stringify([]);
           c.description = null;
         });
@@ -166,11 +166,11 @@ describe('CellStore', () => {
       expect(cell.walls).toEqual({ N: 'open', S: 'open', E: 'open', W: 'open' });
     });
 
-    it('initialises marker as null', async () => {
+    it('initialises markers as an empty array', async () => {
       await useCellStore.getState().addCell(game.id, map.id, 0, 0);
 
       const cell = useCellStore.getState().cells['0,0'];
-      expect(cell.marker).toBeNull();
+      expect(cell.markers).toEqual([]);
     });
 
     it('initialises effects as empty', async () => {
@@ -234,12 +234,12 @@ describe('CellStore', () => {
       expect(useCellStore.getState().cells['0,0'].walls).toEqual(newWalls);
     });
 
-    it('updates marker optimistically', async () => {
+    it('updates markers optimistically', async () => {
       await seedCell(0, 0);
 
-      await useCellStore.getState().updateCell(game.id, map.id, '0,0', { marker: 'Shop' });
+      await useCellStore.getState().updateCell(game.id, map.id, '0,0', { markers: ['Shop'] });
 
-      expect(useCellStore.getState().cells['0,0'].marker).toBe('Shop');
+      expect(useCellStore.getState().cells['0,0'].markers).toEqual(['Shop']);
     });
 
     it('updates effects optimistically', async () => {

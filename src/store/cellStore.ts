@@ -83,7 +83,7 @@ export const useCellStore = create<CellStore>((set, get) => ({
       x,
       y,
       walls: defaultWalls(),
-      marker: null,
+      markers: [],
       effects: [],
       desc: '',
     };
@@ -101,7 +101,7 @@ export const useCellStore = create<CellStore>((set, get) => ({
           c.x = x;
           c.y = y;
           c.walls = JSON.stringify(defaultWalls());
-          c.marker = null;
+          c.markers = JSON.stringify([]);
           c.effects = JSON.stringify([]);
           c.description = null;
         });
@@ -151,7 +151,7 @@ export const useCellStore = create<CellStore>((set, get) => ({
       await database.write(async () => {
         await records[0].update((c) => {
           if (updates.walls !== undefined) c.walls = JSON.stringify(updates.walls);
-          if (updates.marker !== undefined) c.marker = updates.marker;
+          if (updates.markers !== undefined) c.markers = JSON.stringify(updates.markers);
           if (updates.effects !== undefined) c.effects = JSON.stringify(updates.effects);
           if (updates.desc !== undefined) c.description = updates.desc;
         });
@@ -295,7 +295,7 @@ export const useCellStore = create<CellStore>((set, get) => ({
               c.x = cell.x;
               c.y = cell.y;
               c.walls = JSON.stringify(cell.walls);
-              c.marker = cell.marker;
+              c.markers = JSON.stringify(cell.markers);
               c.effects = JSON.stringify(cell.effects);
               c.description = cell.desc;
             }),

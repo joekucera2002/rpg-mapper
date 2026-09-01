@@ -19,11 +19,13 @@ describe('handleTap', () => {
   let addCell: jest.Mock;
   let eraseCell: jest.Mock;
   let selectCell: jest.Mock;
+  let onCellPanelOpen: jest.Mock;
 
   beforeEach(() => {
     addCell = jest.fn().mockResolvedValue(true);
     eraseCell = jest.fn().mockResolvedValue(undefined);
     selectCell = jest.fn();
+    onCellPanelOpen = jest.fn();
   });
 
   describe('paint tool', () => {
@@ -43,6 +45,7 @@ describe('handleTap', () => {
         addCell,
         eraseCell,
         selectCell,
+        onCellPanelOpen,
       );
 
       expect(addCell).toHaveBeenCalledWith(game.id, activeMap.id, 0, 0);
@@ -62,9 +65,30 @@ describe('handleTap', () => {
         addCell,
         eraseCell,
         selectCell,
+        onCellPanelOpen,
       );
 
       expect(addCell).toHaveBeenCalledWith(game.id, activeMap.id, 1, 1);
+    });
+
+    it('does not open the cell panel when tapping an empty cell', async () => {
+      await handleTap(
+        originSx,
+        originSy,
+        zeroPan,
+        canvasSize,
+        {},
+        null,
+        game,
+        activeMap,
+        activeTool,
+        addCell,
+        eraseCell,
+        selectCell,
+        onCellPanelOpen,
+      );
+
+      expect(onCellPanelOpen).not.toHaveBeenCalled();
     });
 
     it('selects the cell when tapping an existing unselected cell', async () => {
@@ -84,13 +108,37 @@ describe('handleTap', () => {
         addCell,
         eraseCell,
         selectCell,
+        onCellPanelOpen,
       );
 
       expect(selectCell).toHaveBeenCalledWith('0,0');
       expect(addCell).not.toHaveBeenCalled();
     });
 
-    it('deselects the cell when tapping an already selected cell', async () => {
+    it('does not open the cell panel when selecting a previously unselected cell', async () => {
+      const cell = createCell({ gameId: game.id, mapId: activeMap.id, x: 0, y: 0 });
+      const cells: CellMap = { '0,0': cell };
+
+      await handleTap(
+        originSx,
+        originSy,
+        zeroPan,
+        canvasSize,
+        cells,
+        null,
+        game,
+        activeMap,
+        activeTool,
+        addCell,
+        eraseCell,
+        selectCell,
+        onCellPanelOpen,
+      );
+
+      expect(onCellPanelOpen).not.toHaveBeenCalled();
+    });
+
+    it('opens the cell panel when tapping an already selected cell', async () => {
       const cell = createCell({ gameId: game.id, mapId: activeMap.id, x: 0, y: 0 });
       const cells: CellMap = { '0,0': cell };
 
@@ -107,9 +155,33 @@ describe('handleTap', () => {
         addCell,
         eraseCell,
         selectCell,
+        onCellPanelOpen,
       );
 
-      expect(selectCell).toHaveBeenCalledWith(null);
+      expect(onCellPanelOpen).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not call selectCell or addCell when opening the cell panel', async () => {
+      const cell = createCell({ gameId: game.id, mapId: activeMap.id, x: 0, y: 0 });
+      const cells: CellMap = { '0,0': cell };
+
+      await handleTap(
+        originSx,
+        originSy,
+        zeroPan,
+        canvasSize,
+        cells,
+        '0,0',
+        game,
+        activeMap,
+        activeTool,
+        addCell,
+        eraseCell,
+        selectCell,
+        onCellPanelOpen,
+      );
+
+      expect(selectCell).not.toHaveBeenCalled();
       expect(addCell).not.toHaveBeenCalled();
     });
 
@@ -127,6 +199,7 @@ describe('handleTap', () => {
         addCell,
         eraseCell,
         selectCell,
+        onCellPanelOpen,
       );
 
       expect(eraseCell).not.toHaveBeenCalled();
@@ -148,6 +221,7 @@ describe('handleTap', () => {
         addCell,
         eraseCell,
         selectCell,
+        onCellPanelOpen,
       );
 
       expect(addCell).toHaveBeenCalledWith(game.id, activeMap.id, -1, 0);
@@ -171,6 +245,7 @@ describe('handleTap', () => {
         addCell,
         eraseCell,
         selectCell,
+        onCellPanelOpen,
       );
 
       expect(eraseCell).toHaveBeenCalledWith(game.id, activeMap.id, '0,0');
@@ -190,6 +265,7 @@ describe('handleTap', () => {
         addCell,
         eraseCell,
         selectCell,
+        onCellPanelOpen,
       );
 
       expect(addCell).not.toHaveBeenCalled();
@@ -212,9 +288,33 @@ describe('handleTap', () => {
         addCell,
         eraseCell,
         selectCell,
+        onCellPanelOpen,
       );
 
       expect(selectCell).not.toHaveBeenCalled();
+    });
+
+    it('does not open the cell panel on erase tool, even on an already selected cell', async () => {
+      const cell = createCell({ gameId: game.id, mapId: activeMap.id, x: 0, y: 0 });
+      const cells: CellMap = { '0,0': cell };
+
+      await handleTap(
+        originSx,
+        originSy,
+        zeroPan,
+        canvasSize,
+        cells,
+        '0,0',
+        game,
+        activeMap,
+        activeTool,
+        addCell,
+        eraseCell,
+        selectCell,
+        onCellPanelOpen,
+      );
+
+      expect(onCellPanelOpen).not.toHaveBeenCalled();
     });
 
     it('passes correct key to eraseCell', async () => {
@@ -231,6 +331,7 @@ describe('handleTap', () => {
         addCell,
         eraseCell,
         selectCell,
+        onCellPanelOpen,
       );
 
       expect(eraseCell).toHaveBeenCalledWith(game.id, activeMap.id, '2,3');
@@ -254,6 +355,7 @@ describe('handleTap', () => {
         addCell,
         eraseCell,
         selectCell,
+        onCellPanelOpen,
       );
 
       expect(addCell).not.toHaveBeenCalled();
@@ -273,6 +375,7 @@ describe('handleTap', () => {
         addCell,
         eraseCell,
         selectCell,
+        onCellPanelOpen,
       );
 
       expect(eraseCell).not.toHaveBeenCalled();
@@ -295,9 +398,33 @@ describe('handleTap', () => {
         addCell,
         eraseCell,
         selectCell,
+        onCellPanelOpen,
       );
 
       expect(selectCell).not.toHaveBeenCalled();
+    });
+
+    it('does not open the cell panel on pan tool', async () => {
+      const cell = createCell({ gameId: game.id, mapId: activeMap.id, x: 0, y: 0 });
+      const cells: CellMap = { '0,0': cell };
+
+      await handleTap(
+        originSx,
+        originSy,
+        zeroPan,
+        canvasSize,
+        cells,
+        '0,0',
+        game,
+        activeMap,
+        activeTool,
+        addCell,
+        eraseCell,
+        selectCell,
+        onCellPanelOpen,
+      );
+
+      expect(onCellPanelOpen).not.toHaveBeenCalled();
     });
   });
 });

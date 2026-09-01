@@ -17,6 +17,7 @@ export async function handleTap(
   addCell: CellStore['addCell'],
   eraseCell: CellStore['eraseCell'],
   selectCell: CellStore['selectCell'],
+  onCellPanelOpen: () => void,
 ): Promise<void> {
   if (activeTool === 'pan') return;
 
@@ -30,8 +31,10 @@ export async function handleTap(
 
   if (cells[key]) {
     if (selectedKey === key) {
-      selectCell(null);
+      // Second tap opens the cell panel
+      onCellPanelOpen();
     } else {
+      // First tap selects the cell
       selectCell(key);
     }
   } else {

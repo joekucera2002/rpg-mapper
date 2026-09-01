@@ -15,7 +15,7 @@ export function createCell(overrides: Partial<Cell> = {}): Cell {
       E: 'open',
       W: 'open',
     },
-    marker: null,
+    markers: [],
     effects: [],
     desc: 'Test Cell',
     ...overrides,

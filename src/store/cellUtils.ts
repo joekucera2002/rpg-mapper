@@ -27,6 +27,15 @@ export function parseEffects(raw: string | null): string[] {
   }
 }
 
+export function parseMarkers(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
 export function toCell(model: CellModel): Cell {
   return {
     id: model.id,
@@ -35,7 +44,7 @@ export function toCell(model: CellModel): Cell {
     x: model.x,
     y: model.y,
     walls: parseWalls(model.walls),
-    marker: model.marker ?? null,
+    markers: parseMarkers(model.markers),
     effects: parseEffects(model.effects),
     desc: model.description ?? '',
   };

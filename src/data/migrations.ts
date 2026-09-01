@@ -70,5 +70,14 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 6,
+      steps: [
+        addColumns({
+          table: 'cells',
+          columns: [{ name: 'markers', type: 'string' }],
+        }),
+      ],
+    },
   ],
 });

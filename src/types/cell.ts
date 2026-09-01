@@ -5,7 +5,7 @@ export type Cell = {
   x: number;
   y: number;
   walls: CellWalls;
-  marker: string | null;
+  markers: string[];
   effects: string[];
   desc: string;
 };
