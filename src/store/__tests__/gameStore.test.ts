@@ -208,7 +208,7 @@ describe('gameStore tests', () => {
             c.x = 0;
             c.y = 0;
             c.walls = JSON.stringify({ N: 'open', S: 'open', E: 'open', W: 'open' });
-            c.marker = null;
+            c.markers = JSON.stringify([]);
             c.effects = JSON.stringify([]);
             c.description = null;
           });

@@ -20,7 +20,7 @@ async function seedCell(gameId: string, mapId: string, x = 0, y = 0): Promise<vo
       c.x = x;
       c.y = y;
       c.walls = JSON.stringify({ N: 'open', S: 'open', E: 'open', W: 'open' });
-      c.marker = null;
+      c.markers = JSON.stringify([]);
       c.effects = JSON.stringify([]);
       c.description = null;
     });
