@@ -21,6 +21,9 @@ import { MapModalProps } from '../../components/MapModal/MapModal.types';
 import { Game } from '../../../../types/game';
 import { createMap, createMaps } from '../../../../testutils/mapFactory';
 import { MapEditorCanvasProps } from '../../components/MapEditorCanvas/MapEditorCanvas.types';
+import { CellStore, UndoEntry, useCellStore } from '../../../../store/cellStore';
+import { createCell } from '../../../../testutils/cellFactory';
+import { CellMap } from '../../../../types/cell';
 
 const game = createGame();
 const areas = createAreas(2, { gameId: game.id });
@@ -39,6 +42,7 @@ const mockUpdateMap = jest.fn();
 const mockDeleteMap = jest.fn();
 const mockSetActiveMap = jest.fn();
 const mockShowToast = jest.fn();
+const mockUndo = jest.fn();
 
 jest.mock('@react-navigation/native', () => {
   const actual = jest.requireActual('@react-navigation/native');
@@ -56,6 +60,7 @@ jest.mock('../../../../data/database', () => ({
 jest.mock('../../../../store/gameStore');
 jest.mock('../../../../store/mapStore');
 jest.mock('../../../../store/toastStore');
+jest.mock('../../../../store/cellStore');
 jest.spyOn(MapEditorTopBarModule, 'MapEditorTopBar');
 jest.spyOn(MapEditorSidebarModule, 'MapEditorSidebar');
 jest.spyOn(MapEditorCanvasModule, 'MapEditorCanvas');
@@ -63,10 +68,43 @@ jest.spyOn(AreaModalModule, 'AreaModal');
 jest.spyOn(MapModalModule, 'MapModal');
 jest.spyOn(MapPaletteModule, 'MapPalette');
 
+function mockCellStore(overrides: Partial<CellStore> = {}) {
+  const state = {
+    currentMapId: null,
+    cells: {},
+    selectedKey: null,
+    undoStack: [],
+    loadCells: jest.fn(),
+    addCell: jest.fn(),
+    updateCell: jest.fn(),
+    eraseCell: jest.fn(),
+    eraseCells: jest.fn(),
+    selectCell: jest.fn(),
+    undo: mockUndo,
+    clearCells: jest.fn(),
+    ...overrides,
+  } as unknown as CellStore;
+
+  jest
+    .mocked(useCellStore)
+    .mockImplementation((selector?: (s: CellStore) => unknown) =>
+      selector ? selector(state) : state,
+    );
+}
+
 function renderScreen({
   games = [game],
   activeMapId = maps[1].id,
-}: { games?: Game[]; activeMapId?: string | null } = {}) {
+  cells = {},
+  undoStack = [],
+}: {
+  games?: Game[];
+  activeMapId?: string | null;
+  cells?: CellMap;
+  undoStack?: UndoEntry[];
+} = {}) {
+  mockCellStore({ cells, undoStack });
+
   let capturedTopBarProps!: MapEditorTopBarProps;
   let capturedSidebarProps!: MapEditorSidebarProps;
   let capturedAreaModalProps!: AreaModalProps;
@@ -188,6 +226,40 @@ describe('MapEditorScreen', () => {
       expect(s.topBarProps.game).toBe(null);
     });
 
+    it('passes the active map name', () => {
+      const s = renderScreen();
+      expect(s.topBarProps.mapName).toBe(maps[1].name);
+    });
+
+    it('passes null for the map name when there is no active map', () => {
+      const s = renderScreen({ activeMapId: null });
+      expect(s.topBarProps.mapName).toBeNull();
+    });
+
+    it('passes the cell count from the cell store', () => {
+      const cells: CellMap = {
+        '0,0': createCell({ x: 0, y: 0 }),
+        '1,0': createCell({ x: 1, y: 0 }),
+      };
+      const s = renderScreen({ cells });
+      expect(s.topBarProps.cellCount).toBe(2);
+    });
+
+    it('passes zero cell count when there are no cells', () => {
+      const s = renderScreen({ cells: {} });
+      expect(s.topBarProps.cellCount).toBe(0);
+    });
+
+    it('passes hasUndo as false when the undo stack is empty', () => {
+      const s = renderScreen({ undoStack: [] });
+      expect(s.topBarProps.hasUndo).toBe(false);
+    });
+
+    it('passes hasUndo as true when the undo stack has entries', () => {
+      const s = renderScreen({ undoStack: [{ mapId: maps[1].id, snapshot: {} }] });
+      expect(s.topBarProps.hasUndo).toBe(true);
+    });
+
     describe('events', () => {
       describe('onBack', () => {
         it('calls goBack when the back button is pressed', async () => {
@@ -196,6 +268,24 @@ describe('MapEditorScreen', () => {
             s.topBarProps.onBack();
           });
           expect(mockNavigation.goBack).toHaveBeenCalledTimes(1);
+        });
+      });
+
+      describe('onUndo', () => {
+        it('calls undo with the game and active map ids', async () => {
+          const s = renderScreen();
+          await act(async () => {
+            s.topBarProps.onUndo();
+          });
+          expect(mockUndo).toHaveBeenCalledWith(game.id, maps[1].id);
+        });
+
+        it('falls back to empty ids when game and active map are not loaded', async () => {
+          const s = renderScreen({ games: [], activeMapId: null });
+          await act(async () => {
+            s.topBarProps.onUndo();
+          });
+          expect(mockUndo).toHaveBeenCalledWith('', '');
         });
       });
 

@@ -19,6 +19,7 @@ import { Area, AreaData } from '../../../types/area';
 import { Map, MapData } from '../../../types/map';
 import { useToastStore } from '../../../store/toastStore';
 import { MapPalette } from '../components/MapPalette/MapPalette';
+import { useCellStore } from '../../../store/cellStore';
 
 export function MapEditorScreen() {
   const navigation = useNavigation<MapEditorScreenProps['navigation']>();
@@ -42,6 +43,11 @@ export function MapEditorScreen() {
   const updateMap = useMapStore((s) => s.updateMap);
   const deleteMap = useMapStore((s) => s.deleteMap);
   const setActiveMap = useMapStore((s) => s.setActiveMap);
+
+  const { undo } = useCellStore();
+  const undoStack = useCellStore((s) => s.undoStack);
+  const cells = useCellStore((s) => s.cells);
+  const cellCount = Object.keys(cells).length;
 
   // Derived
   const activeMap = maps.find((m) => m.id === activeMapId) ?? null;
@@ -134,7 +140,11 @@ export function MapEditorScreen() {
   // Props
   const topBarProps: MapEditorTopBarProps = {
     game,
+    mapName: activeMap?.name ?? null,
+    cellCount,
     onBack: () => navigation.goBack(),
+    onUndo: () => void undo(game?.id ?? '', activeMap?.id ?? ''),
+    hasUndo: undoStack.length > 0,
   };
 
   const sidebarProps: MapEditorSidebarProps = {
