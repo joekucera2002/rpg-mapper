@@ -91,6 +91,21 @@ describe('CellPanel', () => {
       renderComponent({ activeMap: null });
       expect(screen.queryByTestId('cell-panel-coords')).toBeNull();
     });
+
+    it("reflects the active map's coordinate system when it differs from the default", () => {
+      const customMap = createMap({
+        gameId: game.id,
+        coordinateSystem: {
+          originKey: '2,3',
+          originDisplayX: 1,
+          originDisplayY: 1,
+          xIncreases: 'left',
+          yIncreases: 'down',
+        },
+      });
+      renderComponent({ activeMap: customMap });
+      expect(screen.getByTestId('cell-panel-coords')).toHaveTextContent('(1, 1)');
+    });
   });
 
   describe('events', () => {

@@ -20,6 +20,7 @@ import { Map, MapData } from '../../../types/map';
 import { useToastStore } from '../../../store/toastStore';
 import { MapPalette } from '../components/MapPalette/MapPalette';
 import { useCellStore } from '../../../store/cellStore';
+import { formatCoord, getDisplayCoord } from '../utils/coordinateUtils';
 
 export function MapEditorScreen() {
   const navigation = useNavigation<MapEditorScreenProps['navigation']>();
@@ -48,9 +49,23 @@ export function MapEditorScreen() {
   const undoStack = useCellStore((s) => s.undoStack);
   const cells = useCellStore((s) => s.cells);
   const cellCount = Object.keys(cells).length;
+  const selectedKey = useCellStore((s) => s.selectedKey);
+  const selectedCell = selectedKey ? cells[selectedKey] : null;
 
   // Derived
   const activeMap = maps.find((m) => m.id === activeMapId) ?? null;
+
+  const selectedCoord =
+    selectedCell && activeMap
+      ? (() => {
+          const { x, y } = getDisplayCoord(
+            selectedCell.x,
+            selectedCell.y,
+            activeMap.coordinateSystem,
+          );
+          return formatCoord(x, y);
+        })()
+      : null;
 
   // Area modal state
   const [areaInEdit, setAreaInEdit] = useState<Area | null>(null);
@@ -142,6 +157,7 @@ export function MapEditorScreen() {
     game,
     mapName: activeMap?.name ?? null,
     cellCount,
+    selectedCoord,
     onBack: () => navigation.goBack(),
     onUndo: () => void undo(game?.id ?? '', activeMap?.id ?? ''),
     hasUndo: undoStack.length > 0,

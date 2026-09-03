@@ -11,6 +11,7 @@ beforeEach(() => {
     mapName: 'Test Map',
     cellCount: 5,
     hasUndo: true,
+    selectedCoord: '(2, 3)',
     onBack: jest.fn(),
     onUndo: jest.fn(),
   };
@@ -58,6 +59,18 @@ describe('MapEditorTopBar', () => {
     it('does not render the map name when null', () => {
       renderComponent({ mapName: null });
       expect(screen.queryByTestId('mapname-text')).toBeNull();
+    });
+  });
+
+  describe('selected coord', () => {
+    it('displays the selected coord when set', () => {
+      renderComponent({ selectedCoord: '(2, 3)' });
+      expect(screen.getByTestId('selected-coord-text').props.children).toBe('(2, 3)');
+    });
+
+    it('does not render the selected coord when null', () => {
+      renderComponent({ selectedCoord: null });
+      expect(screen.queryByTestId('selected-coord-text')).toBeNull();
     });
   });
 

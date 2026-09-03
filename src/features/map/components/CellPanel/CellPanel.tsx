@@ -13,8 +13,9 @@ import { colors } from '../../../../constants';
 import { useCellStore } from '../../../../store/cellStore';
 import { useEditorStore } from '../../../../store/editorStore';
 import { CellPanelProps } from './CellPanel.types';
-import { Cell, CellWalls, WallType } from '../../../../types/cell';
+import { CellWalls, WallType } from '../../../../types/cell';
 import { WALL_TYPE_KEY } from '../../../../types/map';
+import { formatCoord, getDisplayCoord } from '../../utils/coordinateUtils';
 
 const PANEL_WIDTH = 280;
 
@@ -26,23 +27,6 @@ const WALL_DIRS: { dir: WallDir; label: string }[] = [
   { dir: 'E', label: 'East' },
   { dir: 'W', label: 'West' },
 ];
-
-function getDisplayCoord(
-  cell: Cell,
-  originKey: string,
-  originDisplayX: number,
-  originDisplayY: number,
-  xIncreases: 'right' | 'left',
-  yIncreases: 'up' | 'down',
-): { x: number; y: number } {
-  const [ox, oy] = originKey.split(',').map(Number);
-  const dx = xIncreases === 'right' ? cell.x - ox : ox - cell.x;
-  const dy = yIncreases === 'down' ? cell.y - oy : oy - cell.y;
-  return {
-    x: originDisplayX + dx,
-    y: originDisplayY + dy,
-  };
-}
 
 function wallTypeLabel(wallType: WallType): string {
   const entry = Object.entries(WALL_TYPE_KEY).find(([, v]) => v === wallType);
@@ -60,16 +44,7 @@ export function CellPanel({ cell, game, activeMap, onClose }: CellPanelProps) {
   const gameEffects = game?.rules?.effects ?? [];
   const mapMarkers = activeMap?.markers ?? [];
 
-  const coords = activeMap
-    ? getDisplayCoord(
-        cell,
-        activeMap.coordinateSystem.originKey,
-        activeMap.coordinateSystem.originDisplayX,
-        activeMap.coordinateSystem.originDisplayY,
-        activeMap.coordinateSystem.xIncreases,
-        activeMap.coordinateSystem.yIncreases,
-      )
-    : null;
+  const coords = activeMap ? getDisplayCoord(cell.x, cell.y, activeMap.coordinateSystem) : null;
 
   async function handleWallPress(dir: WallDir) {
     if (!activeWallType) return;
@@ -113,7 +88,7 @@ export function CellPanel({ cell, game, activeMap, onClose }: CellPanelProps) {
             </Text>
             {coords && (
               <Text style={styles.headerCoords} testID="cell-panel-coords">
-                ({coords.x}, {coords.y})
+                {formatCoord(coords.x, coords.y)}
               </Text>
             )}
           </View>

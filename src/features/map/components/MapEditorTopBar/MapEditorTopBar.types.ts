@@ -5,6 +5,7 @@ export type MapEditorTopBarProps = {
   mapName: string | null;
   cellCount: number;
   hasUndo: boolean;
+  selectedCoord: string | null;
   onBack: () => void;
   onUndo: () => void;
 };

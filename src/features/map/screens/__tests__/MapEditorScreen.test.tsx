@@ -97,13 +97,15 @@ function renderScreen({
   activeMapId = maps[1].id,
   cells = {},
   undoStack = [],
+  selectedKey = null,
 }: {
   games?: Game[];
   activeMapId?: string | null;
   cells?: CellMap;
   undoStack?: UndoEntry[];
+  selectedKey?: string | null;
 } = {}) {
-  mockCellStore({ cells, undoStack });
+  mockCellStore({ cells, undoStack, selectedKey });
 
   let capturedTopBarProps!: MapEditorTopBarProps;
   let capturedSidebarProps!: MapEditorSidebarProps;
@@ -258,6 +260,28 @@ describe('MapEditorScreen', () => {
     it('passes hasUndo as true when the undo stack has entries', () => {
       const s = renderScreen({ undoStack: [{ mapId: maps[1].id, snapshot: {} }] });
       expect(s.topBarProps.hasUndo).toBe(true);
+    });
+
+    it('passes null selectedCoord when there is no selected cell', () => {
+      const s = renderScreen({ selectedKey: null });
+      expect(s.topBarProps.selectedCoord).toBeNull();
+    });
+
+    it('passes null selectedCoord when there is no active map', () => {
+      const cells: CellMap = { '2,3': createCell({ x: 2, y: 3 }) };
+      const s = renderScreen({ activeMapId: null, cells, selectedKey: '2,3' });
+      expect(s.topBarProps.selectedCoord).toBeNull();
+    });
+
+    it('passes the formatted coordinates of the selected cell', () => {
+      const cells: CellMap = { '2,3': createCell({ x: 2, y: 3 }) };
+      const s = renderScreen({ cells, selectedKey: '2,3' });
+      expect(s.topBarProps.selectedCoord).toBe('(2, -3)');
+    });
+
+    it('passes null selectedCoord when the selected key does not match a cell', () => {
+      const s = renderScreen({ cells: {}, selectedKey: '9,9' });
+      expect(s.topBarProps.selectedCoord).toBeNull();
     });
 
     describe('events', () => {

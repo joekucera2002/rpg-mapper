@@ -8,6 +8,7 @@ export function MapEditorTopBar({
   mapName,
   cellCount,
   hasUndo,
+  selectedCoord,
   onBack,
   onUndo,
 }: MapEditorTopBarProps) {
@@ -37,6 +38,13 @@ export function MapEditorTopBar({
 
       {/* Spacer */}
       <View style={styles.spacer} />
+
+      {/* Selected coord */}
+      {selectedCoord && (
+        <Text style={styles.selectedCoord} testID="selected-coord-text">
+          {selectedCoord}
+        </Text>
+      )}
 
       {/* Cell count */}
       <Text style={styles.cellCount} testID="cellcount-text">
@@ -99,6 +107,12 @@ const styles = StyleSheet.create({
     color: colors.text2,
     paddingHorizontal: 14,
     maxWidth: 200,
+  },
+  selectedCoord: {
+    fontSize: 11,
+    color: colors.text2,
+    fontFamily: 'monospace',
+    paddingHorizontal: 14,
   },
   spacer: {
     flex: 1,
