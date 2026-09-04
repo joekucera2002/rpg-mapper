@@ -264,53 +264,56 @@ export function MapEditorCanvas({ game, activeMap }: MapEditorCanvasProps) {
   }
 
   return (
-    <GestureDetector gesture={composed}>
-      <View
-        style={styles.root}
-        onLayout={(e) => {
-          const { width, height } = e.nativeEvent.layout;
-          setCanvasSize({ width, height });
-        }}
-        testID="canvas-container"
-      >
-        {canvasSize.width > 0 && (
-          <Canvas
-            style={{ width: canvasSize.width, height: canvasSize.height }}
-            testID="skia-canvas"
-          >
-            <Fill color={colors.bg} />
-            <Group>
-              {renderGrid()}
-              {renderCells()}
-            </Group>
-          </Canvas>
-        )}
+    <>
+      <GestureDetector gesture={composed}>
+        <View
+          style={styles.root}
+          onLayout={(e) => {
+            const { width, height } = e.nativeEvent.layout;
+            setCanvasSize({ width, height });
+          }}
+          testID="canvas-container"
+        >
+          {canvasSize.width > 0 && (
+            <Canvas
+              style={{ width: canvasSize.width, height: canvasSize.height }}
+              testID="skia-canvas"
+            >
+              <Fill color={colors.bg} />
+              <Group>
+                {renderGrid()}
+                {renderCells()}
+              </Group>
+            </Canvas>
+          )}
 
-        {cellPanelOpen && selectedKey && cells[selectedKey] && (
-          <CellPanel
-            key={selectedKey}
-            cell={cells[selectedKey]}
-            game={game}
-            activeMap={activeMap}
-            onClose={() => setCellPanelOpen(false)}
-          />
-        )}
+          {!activeMap && (
+            <View style={styles.noMap} pointerEvents="none" testID="no-map-message">
+              <Ionicons
+                name="map-outline"
+                size={40}
+                color="rgba(255,255,255,0.15)"
+                testID="no-map-icon"
+              />
+              <Text style={styles.noMapText} testID="no-map-text">
+                Select a map from the sidebar
+              </Text>
+            </View>
+          )}
+        </View>
+      </GestureDetector>
 
-        {!activeMap && (
-          <View style={styles.noMap} pointerEvents="none" testID="no-map-message">
-            <Ionicons
-              name="map-outline"
-              size={40}
-              color="rgba(255,255,255,0.15)"
-              testID="no-map-icon"
-            />
-            <Text style={styles.noMapText} testID="no-map-text">
-              Select a map from the sidebar
-            </Text>
-          </View>
-        )}
-      </View>
-    </GestureDetector>
+      {/* CellPanel outside GestureDetector — needs normal RN touch handling */}
+      {cellPanelOpen && selectedKey && cells[selectedKey] && (
+        <CellPanel
+          key={selectedKey}
+          cell={cells[selectedKey]}
+          game={game}
+          activeMap={activeMap}
+          onClose={() => setCellPanelOpen(false)}
+        />
+      )}
+    </>
   );
 }
 

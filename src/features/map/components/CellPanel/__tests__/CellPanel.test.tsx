@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import { CellPanel } from '../CellPanel';
 import { CellPanelProps } from '../CellPanel.types';
 import { useCellStore } from '../../../../../store/cellStore';
+import { useMapStore } from '../../../../../store/mapStore';
 import { useEditorStore } from '../../../../../store/editorStore';
 import { createCell } from '../../../../../testutils/cellFactory';
 import { createGame } from '../../../../../testutils/gameFactory';
@@ -9,6 +10,7 @@ import { createMap } from '../../../../../testutils/mapFactory';
 import { colors } from '../../../../../constants';
 
 jest.mock('../../../../../store/cellStore');
+jest.mock('../../../../../store/mapStore');
 
 jest.mock('../../../../../data/database', () => ({
   database: {
@@ -18,12 +20,20 @@ jest.mock('../../../../../data/database', () => ({
 }));
 
 const mockUpdateCell = jest.fn();
+const mockUpdateMap = jest.fn();
 
 function mockStore(overrides = {}) {
   jest.mocked(useCellStore).mockReturnValue({
     updateCell: mockUpdateCell,
     ...overrides,
   } as unknown as ReturnType<typeof useCellStore>);
+}
+
+function mockMapStore(overrides = {}) {
+  jest.mocked(useMapStore).mockReturnValue({
+    updateMap: mockUpdateMap,
+    ...overrides,
+  } as unknown as ReturnType<typeof useMapStore>);
 }
 
 const game = createGame({ rules: { effects: ['Trap', 'Darkness'], markers: [], walls: [] } });
@@ -53,6 +63,7 @@ function renderComponent(overrides: Partial<CellPanelProps> = {}) {
 
 beforeEach(() => {
   mockStore();
+  mockMapStore();
   jest.clearAllMocks();
   useEditorStore.setState({
     activeTool: 'paint',
@@ -69,6 +80,11 @@ describe('CellPanel', () => {
   it('renders the backdrop', () => {
     renderComponent();
     expect(screen.getByTestId('cell-panel-backdrop')).toBeTruthy();
+  });
+
+  it('does not extend the backdrop under the panel', () => {
+    renderComponent();
+    expect(screen.getByTestId('cell-panel-backdrop')).toHaveStyle({ right: 280 });
   });
 
   it('renders the panel', () => {
@@ -105,6 +121,87 @@ describe('CellPanel', () => {
       });
       renderComponent({ activeMap: customMap });
       expect(screen.getByTestId('cell-panel-coords')).toHaveTextContent('(1, 1)');
+    });
+  });
+
+  describe('origin cell', () => {
+    const originCell = createCell({ gameId: game.id, mapId: map.id, x: 0, y: 0 });
+
+    it('shows "Origin Cell" as the title when the cell is the map origin', () => {
+      renderComponent({ cell: originCell });
+      expect(screen.getByTestId('cell-panel-title').props.children).toBe('Origin Cell');
+    });
+
+    it('does not treat the cell as origin when there is no active map', () => {
+      renderComponent({ cell: originCell, activeMap: null });
+      expect(screen.getByTestId('cell-panel-title').props.children).toBe('Cell');
+    });
+
+    it('renders the origin coordinates section for the origin cell', () => {
+      renderComponent({ cell: originCell });
+      expect(screen.getByTestId('origin-section')).toBeTruthy();
+    });
+
+    it('does not render the origin coordinates section for a non-origin cell', () => {
+      renderComponent();
+      expect(screen.queryByTestId('origin-section')).toBeNull();
+    });
+
+    it('initialises the X and Y inputs from the coordinate system display offsets', () => {
+      const customMap = createMap({
+        gameId: game.id,
+        coordinateSystem: {
+          originKey: '0,0',
+          originDisplayX: 5,
+          originDisplayY: -2,
+          xIncreases: 'right',
+          yIncreases: 'up',
+        },
+      });
+      renderComponent({ cell: originCell, activeMap: customMap });
+      expect(screen.getByTestId('origin-x-input').props.value).toBe('5');
+      expect(screen.getByTestId('origin-y-input').props.value).toBe('-2');
+    });
+
+    it('updates the X and Y inputs as the user types', () => {
+      renderComponent({ cell: originCell });
+      fireEvent.changeText(screen.getByTestId('origin-x-input'), '10');
+      fireEvent.changeText(screen.getByTestId('origin-y-input'), '-4');
+      expect(screen.getByTestId('origin-x-input').props.value).toBe('10');
+      expect(screen.getByTestId('origin-y-input').props.value).toBe('-4');
+    });
+
+    it('calls updateMap with the parsed origin display coordinates on Apply', async () => {
+      renderComponent({ cell: originCell });
+      fireEvent.changeText(screen.getByTestId('origin-x-input'), '10');
+      fireEvent.changeText(screen.getByTestId('origin-y-input'), '-4');
+      fireEvent.press(screen.getByTestId('origin-save-btn'));
+
+      await waitFor(() =>
+        expect(mockUpdateMap).toHaveBeenCalledWith(map.id, {
+          gameId: map.gameId,
+          areaId: map.areaId,
+          name: map.name,
+          type: map.type,
+          coordinateSystem: { ...map.coordinateSystem, originDisplayX: 10, originDisplayY: -4 },
+          markers: map.markers,
+        }),
+      );
+    });
+
+    it('falls back to 0 when an origin input is not a valid number', async () => {
+      renderComponent({ cell: originCell });
+      fireEvent.changeText(screen.getByTestId('origin-x-input'), 'abc');
+      fireEvent.press(screen.getByTestId('origin-save-btn'));
+
+      await waitFor(() =>
+        expect(mockUpdateMap).toHaveBeenCalledWith(
+          map.id,
+          expect.objectContaining({
+            coordinateSystem: expect.objectContaining({ originDisplayX: 0 }),
+          }),
+        ),
+      );
     });
   });
 

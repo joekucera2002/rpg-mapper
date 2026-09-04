@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../../../constants';
 import { useCellStore } from '../../../../store/cellStore';
+import { useMapStore } from '../../../../store/mapStore';
 import { useEditorStore } from '../../../../store/editorStore';
 import { CellPanelProps } from './CellPanel.types';
 import { CellWalls, WallType } from '../../../../types/cell';
@@ -35,16 +36,25 @@ function wallTypeLabel(wallType: WallType): string {
 
 export function CellPanel({ cell, game, activeMap, onClose }: CellPanelProps) {
   const { updateCell } = useCellStore();
+  const { updateMap } = useMapStore();
   const { activeWallType } = useEditorStore();
 
   const [effects, setEffects] = useState<string[]>(cell.effects);
   const [markers, setMarkers] = useState<string[]>(cell.markers);
   const [desc, setDesc] = useState<string>(cell.desc);
+  const [originX, setOriginX] = useState<string>(
+    String(activeMap?.coordinateSystem.originDisplayX ?? 0),
+  );
+  const [originY, setOriginY] = useState<string>(
+    String(activeMap?.coordinateSystem.originDisplayY ?? 0),
+  );
 
   const gameEffects = game?.rules?.effects ?? [];
   const mapMarkers = activeMap?.markers ?? [];
-
   const coords = activeMap ? getDisplayCoord(cell.x, cell.y, activeMap.coordinateSystem) : null;
+  const isOrigin = activeMap
+    ? `${cell.x},${cell.y}` === activeMap.coordinateSystem.originKey
+    : false;
 
   async function handleWallPress(dir: WallDir) {
     if (!activeWallType) return;
@@ -73,18 +83,38 @@ export function CellPanel({ cell, game, activeMap, onClose }: CellPanelProps) {
     await updateCell(game!.id, activeMap!.id, `${cell.x},${cell.y}`, { desc });
   }
 
+  async function handleOriginSave() {
+    if (!activeMap) return;
+    const x = parseInt(originX) || 0;
+    const y = parseInt(originY) || 0;
+    await updateMap(activeMap.id, {
+      gameId: activeMap.gameId,
+      areaId: activeMap.areaId,
+      name: activeMap.name,
+      type: activeMap.type,
+      coordinateSystem: {
+        ...activeMap.coordinateSystem,
+        originDisplayX: x,
+        originDisplayY: y,
+      },
+      markers: activeMap.markers,
+    });
+  }
+
   return (
     <>
-      {/* Backdrop — tap outside to close */}
-      <Pressable style={styles.backdrop} onPress={onClose} testID="cell-panel-backdrop" />
+      <Pressable
+        style={[styles.backdrop, { right: PANEL_WIDTH }]}
+        onPress={onClose}
+        testID="cell-panel-backdrop"
+      />
 
-      {/* Panel */}
       <View style={styles.panel} testID="cell-panel">
         {/* Header */}
         <View style={styles.header}>
           <View>
             <Text style={styles.headerTitle} testID="cell-panel-title">
-              Cell
+              {isOrigin ? 'Origin Cell' : 'Cell'}
             </Text>
             {coords && (
               <Text style={styles.headerCoords} testID="cell-panel-coords">
@@ -106,7 +136,45 @@ export function CellPanel({ cell, game, activeMap, onClose }: CellPanelProps) {
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          scrollEnabled={false}
         >
+          {/* Origin coordinates — only for origin cell */}
+          {isOrigin && (
+            <View style={styles.section} testID="origin-section">
+              <Text style={styles.sectionLabel}>ORIGIN COORDINATES</Text>
+              <Text style={styles.sectionHint}>Set what coordinates this cell displays as</Text>
+              <View style={styles.originRow}>
+                <View style={styles.originField}>
+                  <Text style={styles.originLabel}>X</Text>
+                  <TextInput
+                    style={styles.originInput}
+                    value={originX}
+                    onChangeText={setOriginX}
+                    keyboardType="numbers-and-punctuation"
+                    testID="origin-x-input"
+                  />
+                </View>
+                <View style={styles.originField}>
+                  <Text style={styles.originLabel}>Y</Text>
+                  <TextInput
+                    style={styles.originInput}
+                    value={originY}
+                    onChangeText={setOriginY}
+                    keyboardType="numbers-and-punctuation"
+                    testID="origin-y-input"
+                  />
+                </View>
+                <TouchableOpacity
+                  style={styles.originSaveBtn}
+                  onPress={handleOriginSave}
+                  testID="origin-save-btn"
+                >
+                  <Text style={styles.originSaveBtnText}>Apply</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
           {/* Walls */}
           <View style={styles.section} testID="walls-section">
             <Text style={styles.sectionLabel}>WALLS</Text>
@@ -279,6 +347,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: colors.text,
+  },
+  originField: {
+    flex: 1,
+    gap: 4,
+  },
+  originInput: {
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.border2,
+    borderRadius: 8,
+    padding: 8,
+    fontSize: 13,
+    color: colors.text,
+    fontFamily: 'monospace',
+    textAlign: 'center',
+  },
+  originLabel: {
+    fontSize: 10,
+    color: colors.text3,
+    fontFamily: 'monospace',
+    textAlign: 'center',
+  },
+  originRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'flex-end',
+  },
+  originSaveBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  originSaveBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
   },
   panel: {
     position: 'absolute',
